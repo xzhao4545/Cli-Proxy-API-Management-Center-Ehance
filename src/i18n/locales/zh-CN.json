@@ -746,6 +746,8 @@
     "error_http": "HTTP",
     "error_upstream": "上游",
     "custom_range": "选择范围",
+    "range_from": "开始时间",
+    "range_to": "结束时间",
     "page_jump": "跳页"
   },
   "stats": {
@@ -994,6 +996,12 @@
           "nonstream_keepalive_hint": "非流式响应时每隔 N 秒发送空行以防止空闲超时，设置为 0 或留空表示禁用",
           "disabled": "已禁用"
         },
+        "keyword_filters": {
+          "title": "关键词过滤",
+          "description": "检测上游响应中的关键词，触发供应商故障切换",
+          "rules": "关键词过滤规则",
+          "rules_desc": "每条规则定义一个在响应中匹配的关键词；匹配后，当前供应商将被标记为失败并尝试下一个供应商"
+        },
         "payload": {
           "title": "Payload 配置",
           "description": "默认值、原始 JSON 规则、覆盖规则与过滤规则",
@@ -1072,6 +1080,24 @@
         "value_default": "值",
         "boolean_true": "true",
         "boolean_false": "false"
+      },
+      "keyword_filters": {
+        "entry": "条目",
+        "keyword": "关键词",
+        "keyword_placeholder": "输入要匹配的关键词",
+        "match_mode": "匹配模式",
+        "match_anywhere": "任意位置",
+        "match_start": "开头",
+        "match_end": "结尾",
+        "match_exact": "完全匹配",
+        "enabled": "启用",
+        "enabled_on": "已启用",
+        "enabled_off": "已禁用",
+        "no_entries": "暂无关键词过滤条目",
+        "add_entry": "添加条目",
+        "delete_confirm_title": "删除关键词过滤条目",
+        "delete_confirm_message": "确定要删除关键词过滤条目“{{keyword}}”吗？",
+        "delete_confirm_fallback": "条目 {{index}}"
       },
       "validation": {
         "validation_blocked": "请先修复表单校验错误再保存",

@@ -11,6 +11,7 @@ import {
   IconInfo,
   IconX,
 } from '@/components/ui/icons';
+import { Select, type SelectOption } from '@/components/ui/Select';
 import type {
   MetricsResponse,
   UsageEventsResponse,
@@ -47,6 +48,7 @@ const PRESET_LABELS: Record<DatePreset, string> = {
 };
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const INLINE_ERROR_MAX_LENGTH = 520;
 
 function formatDateInput(d: Date): string {
   const y = d.getFullYear();
@@ -71,12 +73,39 @@ function formatDuration(ms: number): string {
   return `${m}m ${s}s`;
 }
 
+function formatLargeTokenCount(value: number): string {
+  if (value < 1_000_000) return value.toLocaleString();
+  const units = [
+    { suffix: 'T', value: 1_000_000_000_000 },
+    { suffix: 'B', value: 1_000_000_000 },
+    { suffix: 'M', value: 1_000_000 },
+  ];
+  const unit = units.find((item) => value >= item.value) ?? units[units.length - 1];
+  const scaled = value / unit.value;
+  const formatted = scaled >= 100 ? scaled.toFixed(0) : scaled >= 10 ? scaled.toFixed(1) : scaled.toFixed(2);
+  return `${formatted.replace(/\.0+$|(?<=\.\d)0+$/, '')}${unit.suffix}`;
+}
+
 function formatErrorSummary(event: UsageEvent): string {
-  const parts: string[] = [];
-  if (event.http_status) parts.push(String(event.http_status));
-  if (event.error_code && event.error_code !== httpStatusText(event.http_status)) parts.push(event.error_code);
-  if (event.error_stage && !parts.length) parts.push(event.error_stage);
-  return parts.join(' ') || '-';
+  const detail = getErrorDetailText(event);
+  const statusParts: string[] = [];
+  if (event.http_status) statusParts.push(`HTTP ${event.http_status}`);
+  if (event.upstream_status && event.upstream_status !== event.http_status) {
+    statusParts.push(`upstream ${event.upstream_status}`);
+  }
+
+  const statusPrefix = statusParts.length ? `[${statusParts.join(' / ')}]` : '';
+  if (detail) {
+    return [statusPrefix, truncateInlineText(detail, INLINE_ERROR_MAX_LENGTH)].filter(Boolean).join(' ');
+  }
+
+  const fallbackParts: string[] = [];
+  if (event.http_status) fallbackParts.push(String(event.http_status));
+  if (event.error_code && event.error_code !== httpStatusText(event.http_status)) {
+    fallbackParts.push(event.error_code);
+  }
+  if (event.error_stage && !fallbackParts.length) fallbackParts.push(event.error_stage);
+  return fallbackParts.join(' ') || '-';
 }
 
 function httpStatusText(status: number | undefined): string {
@@ -111,6 +140,28 @@ function parseErrorBody(body: string | undefined): string {
   } catch {
     return body;
   }
+}
+
+function getErrorDetailText(event: UsageEvent): string {
+  const candidates = [event.provider_error_raw, event.error_message];
+  const parsed = candidates
+    .map((body) => parseErrorBody(body))
+    .map((body) => body.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  return parsed.find((body) => !isGenericStatusMessage(body, event.http_status)) || parsed[0] || '';
+}
+
+function isGenericStatusMessage(message: string, status: number | undefined): boolean {
+  const normalized = message.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!normalized) return true;
+  if (status && normalized === String(status)) return true;
+  const statusText = httpStatusText(status).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return Boolean(statusText && (normalized === statusText || normalized === `${status} ${statusText}`));
+}
+
+function truncateInlineText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 1).trimEnd()}...`;
 }
 
 /* ─────────── Portal Popover wrapper ─────────── */
@@ -211,9 +262,8 @@ function ErrorPopover({
 }) {
   const { t } = useTranslation();
   const parsedBody = useMemo(() => {
-    const body = event.error_message || event.provider_error_raw || '';
-    return parseErrorBody(body);
-  }, [event.error_message, event.provider_error_raw]);
+    return getErrorDetailText(event);
+  }, [event]);
 
   return (
     <PortalPopover triggerRef={triggerRef} onClose={onClose} className={styles.errorPopover}>
@@ -256,6 +306,54 @@ function MetricsCard({
       <span className={styles.metricsValue}>{value}</span>
       <span className={styles.metricsLabel}>{label}</span>
       {sublabel ? <span className={styles.metricsSublabel}>{sublabel}</span> : null}
+    </div>
+  );
+}
+
+function DateTimeInput({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input || disabled) return;
+    input.focus();
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+    input.click();
+  };
+
+  return (
+    <div className={styles.dateInputWrap}>
+      <span>{label}</span>
+      <div className={styles.dateInputShell}>
+        <input
+          ref={inputRef}
+          type="datetime-local"
+          className={styles.dateInput}
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          className={styles.datePickerBtn}
+          onClick={openPicker}
+          disabled={disabled}
+          aria-label={label}
+        />
+      </div>
     </div>
   );
 }
@@ -304,7 +402,7 @@ function EventRow({
             <IconInfo size={12} />
           </button>
         </span>
-        {showTokenPopover && tokenBtnRef.current ? (
+        {showTokenPopover ? (
           <TokenPopover event={event} triggerRef={tokenBtnRef} onClose={() => onTokenClick(event.id)} />
         ) : null}
       </td>
@@ -321,10 +419,11 @@ function EventRow({
               type="button"
               className={styles.cellErrorBtn}
               onClick={() => onErrorClick(event.id)}
+              title={formatErrorSummary(event)}
             >
               {formatErrorSummary(event)}
             </button>
-            {showErrorPopover && errorBtnRef.current ? (
+            {showErrorPopover ? (
               <ErrorPopover event={event} triggerRef={errorBtnRef} onClose={() => onErrorClick(event.id)} />
             ) : null}
           </div>
@@ -404,6 +503,25 @@ export function UsagePage() {
     const parts = providerFilter.split('|');
     return parts[2] || '';
   }, [providerFilter]);
+  const providerSelectOptions = useMemo<SelectOption[]>(() => [
+    { value: '', label: t('usage.filter_all') },
+    ...providerOptions.map((opt) => {
+      const compound = opt.key + '|' + (opt.label || '') + '|' + (opt.auth_id || '');
+      const isDefault = !opt.label || opt.label === opt.key || opt.label === `${opt.key}-apikey`;
+      const display = isDefault && opt.auth_position
+        ? `${opt.key}#${opt.auth_position}`
+        : (opt.label || opt.key);
+      return { value: compound, label: display };
+    }),
+  ], [providerOptions, t]);
+  const pageSizeOptions = useMemo<SelectOption[]>(() =>
+    PAGE_SIZE_OPTIONS.map((size) => ({ value: String(size), label: String(size) })),
+  []);
+  const statusOptions = useMemo<SelectOption[]>(() => [
+    { value: '', label: t('usage.filter_all') },
+    { value: 'success', label: t('common.success') },
+    { value: 'failure', label: t('common.failure') },
+  ], [t]);
 
   /* ── Pagination ── */
   const [pageSize, setPageSize] = useState(20);
@@ -433,8 +551,7 @@ export function UsagePage() {
   /* ── Load effect (triggered by loadKey or any filter change) ── */
   useEffect(() => {
     if (!connected) return;
-    setLoading(true);
-    setEventsLoading(true);
+    let cancelled = false;
     const params: Record<string, string> = {};
     if (dateRange) {
       params.date_from = dateRange.date_from;
@@ -444,20 +561,38 @@ export function UsagePage() {
     if (providerFilterLabel) params.provider_label = providerFilterLabel;
     if (providerFilterAuthId) params.auth_id = providerFilterAuthId;
     if (statusFilter) params.status = statusFilter;
-    Promise.all([
-      usageApi.getMetrics(params).then(setMetrics).catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : String(err));
-      }).finally(() => setLoading(false)),
-      usageApi.getEvents({
-        ...params,
-        limit: pageSize,
-        offset: page * pageSize,
-        sort: 'started_at',
-        order: 'DESC',
-      }).then(setEvents).catch(() => {}).finally(() => setEventsLoading(false)),
-    ]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connected, loadKey, dateRange, providerFilter, statusFilter, pageSize, page]);
+
+    const loadUsageData = async () => {
+      setLoading(true);
+      setEventsLoading(true);
+      await Promise.all([
+        usageApi.getMetrics(params).then((data) => {
+          if (!cancelled) setMetrics(data);
+        }).catch((err: unknown) => {
+          if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+        }).finally(() => {
+          if (!cancelled) setLoading(false);
+        }),
+        usageApi.getEvents({
+          ...params,
+          include_error_raw: true,
+          limit: pageSize,
+          offset: page * pageSize,
+          sort: 'started_at',
+          order: 'DESC',
+        }).then((data) => {
+          if (!cancelled) setEvents(data);
+        }).catch(() => {}).finally(() => {
+          if (!cancelled) setEventsLoading(false);
+        }),
+      ]);
+    };
+
+    void loadUsageData();
+    return () => {
+      cancelled = true;
+    };
+  }, [connected, loadKey, dateRange, providerFilterKey, providerFilterLabel, providerFilterAuthId, statusFilter, pageSize, page]);
 
   /* ── Load filters on mount ── */
   useEffect(() => {
@@ -465,7 +600,6 @@ export function UsagePage() {
     usageApi.getFilters().then((data: FiltersResponse) => {
       setProviderOptions(data.providers || []);
     }).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
   /* ── Handlers ── */
@@ -564,43 +698,31 @@ export function UsagePage() {
             </button>
           </div>
           <div className={`${styles.dateRangeGroup} ${customMode ? styles.dateRangeGroupActive : ''}`}>
-            <input
-              type="datetime-local"
-              className={styles.dateInput}
+            <DateTimeInput
+              label={t('usage.range_from')}
               value={dateFrom}
               disabled={!customMode}
-              onChange={(e) => handleDateFromChange(e.target.value)}
+              onChange={handleDateFromChange}
             />
-            <span className={styles.dateSep}>–</span>
-            <input
-              type="datetime-local"
-              className={styles.dateInput}
+            <span className={styles.dateSep}>-</span>
+            <DateTimeInput
+              label={t('usage.range_to')}
               value={dateTo}
               disabled={!customMode}
-              onChange={(e) => handleDateToChange(e.target.value)}
+              onChange={handleDateToChange}
             />
           </div>
         </div>
         <div className={styles.toolbarRight}>
-            <select
-              className={styles.filterSelect}
-              value={providerFilter}
-              onChange={(e) => handleProviderFilter(e.target.value)}
-            >
-              <option value="">{t('usage.filter_all')}</option>
-              {providerOptions.map((opt) => {
-                const compound = opt.key + '|' + (opt.label || '') + '|' + (opt.auth_id || '');
-                const isDefault = !opt.label || opt.label === opt.key || opt.label === `${opt.key}-apikey`;
-                const display = isDefault && opt.auth_position
-                  ? `${opt.key}#${opt.auth_position}`
-                  : (opt.label || opt.key);
-                return (
-                  <option key={compound} value={compound}>
-                    {display}
-                  </option>
-                );
-              })}
-            </select>
+          <Select
+            className={`${styles.filterSelect} ${styles.providerFilterSelect}`}
+            value={providerFilter}
+            options={providerSelectOptions}
+            onChange={handleProviderFilter}
+            ariaLabel={t('usage.provider')}
+            fullWidth={false}
+            size="sm"
+          />
           <button
             type="button"
             className={styles.refreshBtn}
@@ -643,7 +765,7 @@ export function UsagePage() {
         />
         <MetricsCard
           label={t('usage.total_tokens')}
-          value={metricsReady ? metrics.total_tokens.toLocaleString() : '-'}
+          value={metricsReady ? formatLargeTokenCount(metrics.total_tokens) : '-'}
           sublabel={metricsReady && metrics.total_tokens > 0
             ? `cache ${(metrics.total_cached_tokens / metrics.total_tokens * 100).toFixed(1)}%`
             : undefined}
@@ -672,24 +794,24 @@ export function UsagePage() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{t('usage.recent_requests')}</h2>
           <div className={styles.filterRow}>
-            <select
+            <Select
               className={styles.filterSelect}
-              value={pageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            >
-              {PAGE_SIZE_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-            <select
+              value={String(pageSize)}
+              options={pageSizeOptions}
+              onChange={(nextValue) => handlePageSizeChange(Number(nextValue))}
+              ariaLabel={t('usage.page_size', { defaultValue: 'Page size' })}
+              fullWidth={false}
+              size="sm"
+            />
+            <Select
               className={styles.filterSelect}
               value={statusFilter}
-              onChange={(e) => handleStatusFilter(e.target.value)}
-            >
-              <option value="">{t('usage.filter_all')}</option>
-              <option value="success">{t('common.success')}</option>
-              <option value="failure">{t('common.failure')}</option>
-            </select>
+              options={statusOptions}
+              onChange={handleStatusFilter}
+              ariaLabel={t('usage.status')}
+              fullWidth={false}
+              size="sm"
+            />
           </div>
         </div>
 

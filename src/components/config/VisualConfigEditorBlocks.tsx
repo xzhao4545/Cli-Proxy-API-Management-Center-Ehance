@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { useNotificationStore } from '@/stores';
 import styles from './VisualConfigEditor.module.scss';
 import { copyToClipboard } from '@/utils/clipboard';
 import type {
+  KeywordFilterEntry,
+  KeywordFilterMatchMode,
   PayloadFilterRule,
   PayloadHeaderEntry,
   PayloadModelEntry,
@@ -444,6 +447,134 @@ const StringListEditor = memo(function StringListEditor({
       <div className={styles.actionRow}>
         <Button variant="secondary" size="sm" onClick={addItem} disabled={disabled}>
           {t('config_management.visual.common.add')}
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+const KEYWORD_FILTER_MATCH_MODE_OPTIONS = [
+  { value: 'anywhere' as const, labelKey: 'config_management.visual.keyword_filters.match_anywhere', defaultLabel: 'Anywhere' },
+  { value: 'start' as const, labelKey: 'config_management.visual.keyword_filters.match_start', defaultLabel: 'Start' },
+  { value: 'end' as const, labelKey: 'config_management.visual.keyword_filters.match_end', defaultLabel: 'End' },
+  { value: 'exact' as const, labelKey: 'config_management.visual.keyword_filters.match_exact', defaultLabel: 'Exact' },
+] as const satisfies ReadonlyArray<{
+  value: KeywordFilterMatchMode;
+  labelKey: string;
+  defaultLabel: string;
+}>;
+
+export const KeywordFilterEditor = memo(function KeywordFilterEditor({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: KeywordFilterEntry[];
+  disabled?: boolean;
+  onChange: (next: KeywordFilterEntry[]) => void;
+}) {
+  const { t } = useTranslation();
+  const showConfirmation = useNotificationStore((state) => state.showConfirmation);
+  const entries = value;
+  const matchModeOptions = useMemo(
+    () =>
+      KEYWORD_FILTER_MATCH_MODE_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: t(opt.labelKey, opt.defaultLabel),
+      })),
+    [t]
+  );
+
+  const addEntry = () =>
+    onChange([...entries, { id: makeClientId(), keyword: '', matchMode: 'anywhere', enabled: true }]);
+
+  const removeEntry = (entryIndex: number) =>
+    onChange(entries.filter((_, i) => i !== entryIndex));
+
+  const requestRemoveEntry = (entryIndex: number) => {
+    const entry = entries[entryIndex];
+    const keyword = entry?.keyword.trim() ||
+      t('config_management.visual.keyword_filters.delete_confirm_fallback', {
+        index: entryIndex + 1,
+      });
+
+    showConfirmation({
+      title: t('config_management.visual.keyword_filters.delete_confirm_title'),
+      message: t('config_management.visual.keyword_filters.delete_confirm_message', { keyword }),
+      confirmText: t('config_management.visual.common.delete'),
+      cancelText: t('config_management.visual.common.cancel'),
+      variant: 'danger',
+      onConfirm: () => removeEntry(entryIndex),
+    });
+  };
+
+  const updateEntry = (entryIndex: number, patch: Partial<KeywordFilterEntry>) =>
+    onChange(entries.map((entry, i) => (i === entryIndex ? { ...entry, ...patch } : entry)));
+
+  return (
+    <div className={styles.blockStack}>
+      {entries.map((entry, entryIndex) => (
+        <div key={entry.id} className={styles.keywordFilterRuleCard}>
+          <div className={styles.keywordFilterHeader}>
+            <div className={styles.keywordFilterTitle}>
+              {t('config_management.visual.keyword_filters.entry')} {entryIndex + 1}
+            </div>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => requestRemoveEntry(entryIndex)}
+              disabled={disabled}
+            >
+              {t('config_management.visual.common.delete')}
+            </Button>
+          </div>
+
+          <div className={styles.keywordFilterFields}>
+            <div className={styles.keywordFilterFieldRow}>
+              <ExpandableInput
+                placeholder={t('config_management.visual.keyword_filters.keyword_placeholder')}
+                ariaLabel={t('config_management.visual.keyword_filters.keyword')}
+                value={entry.keyword}
+                onChange={(nextValue) => updateEntry(entryIndex, { keyword: nextValue })}
+                disabled={disabled}
+                className={styles.keywordFilterKeywordInput}
+              />
+              <Select
+                value={entry.matchMode}
+                options={matchModeOptions}
+                disabled={disabled}
+                ariaLabel={t('config_management.visual.keyword_filters.match_mode')}
+                onChange={(nextValue) =>
+                  updateEntry(entryIndex, { matchMode: nextValue as KeywordFilterMatchMode })
+                }
+              />
+            </div>
+            <div className={styles.keywordFilterToggleRow}>
+              <ToggleSwitch
+                checked={entry.enabled}
+                onChange={(nextValue) => updateEntry(entryIndex, { enabled: nextValue })}
+                disabled={disabled}
+                ariaLabel={t('config_management.visual.keyword_filters.enabled')}
+              />
+              <span className={styles.keywordFilterToggleLabel}>
+                {entry.enabled
+                  ? t('config_management.visual.keyword_filters.enabled_on')
+                  : t('config_management.visual.keyword_filters.enabled_off')}
+              </span>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {entries.length === 0 && (
+        <div className={styles.emptyState}>
+          {t('config_management.visual.keyword_filters.no_entries')}
+        </div>
+      )}
+
+      <div className={styles.actionRow}>
+        <Button variant="secondary" size="sm" onClick={addEntry} disabled={disabled}>
+          {t('config_management.visual.keyword_filters.add_entry')}
         </Button>
       </div>
     </div>

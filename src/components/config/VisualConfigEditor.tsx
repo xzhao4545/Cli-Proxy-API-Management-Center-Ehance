@@ -18,6 +18,7 @@ import {
   IconDiamond,
   IconKey,
   IconSatellite,
+  IconSearch,
   IconSettings,
   IconTimer,
   type IconProps,
@@ -25,6 +26,7 @@ import {
 import { ConfigSection } from '@/components/config/ConfigSection';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type {
+  KeywordFilterEntry,
   PayloadFilterRule,
   PayloadParamValidationErrorCode,
   PayloadRule,
@@ -35,12 +37,13 @@ import type {
 } from '@/types/visualConfig';
 import {
   ApiKeysCardEditor,
+  KeywordFilterEditor,
   PayloadFilterRulesEditor,
   PayloadRulesEditor,
 } from './VisualConfigEditorBlocks';
 import styles from './VisualConfigEditor.module.scss';
 
-type VisualSectionId = 'server' | 'auth' | 'system' | 'quota' | 'streaming' | 'payload';
+type VisualSectionId = 'server' | 'auth' | 'system' | 'quota' | 'streaming' | 'keywordFilters' | 'payload';
 
 type VisualSection = {
   id: VisualSectionId;
@@ -238,6 +241,10 @@ export function VisualConfigEditor({
     (payloadFilterRules: PayloadFilterRule[]) => onChange({ payloadFilterRules }),
     [onChange]
   );
+  const handleKeywordFiltersChange = useCallback(
+    (keywordFilters: KeywordFilterEntry[]) => onChange({ keywordFilters }),
+    [onChange]
+  );
   const disableImageGenerationOptions = useMemo(
     () => [
       {
@@ -305,6 +312,12 @@ export function VisualConfigEditor({
           'streaming.bootstrapRetries',
           'streaming.nonstreamKeepaliveInterval',
         ]),
+      },
+      {
+        id: 'keywordFilters',
+        title: t('config_management.visual.sections.keyword_filters.title'),
+        icon: IconSearch,
+        errorCount: 0,
       },
       {
         id: 'payload',
@@ -1134,11 +1147,35 @@ export function VisualConfigEditor({
           </ConfigSection>
 
           <ConfigSection
+            id="keywordFilters"
+            ref={(node) => {
+              sectionRefs.current.keywordFilters = node;
+            }}
+            indexLabel="06"
+            icon={<IconSearch size={16} />}
+            title={t('config_management.visual.sections.keyword_filters.title')}
+            description={t('config_management.visual.sections.keyword_filters.description')}
+          >
+            <SectionStack>
+              <SectionSubsection
+                title={t('config_management.visual.sections.keyword_filters.rules')}
+                description={t('config_management.visual.sections.keyword_filters.rules_desc')}
+              >
+                <KeywordFilterEditor
+                  value={values.keywordFilters}
+                  disabled={disabled}
+                  onChange={handleKeywordFiltersChange}
+                />
+              </SectionSubsection>
+            </SectionStack>
+          </ConfigSection>
+
+          <ConfigSection
             id="payload"
             ref={(node) => {
               sectionRefs.current.payload = node;
             }}
-            indexLabel="06"
+            indexLabel="07"
             icon={<IconCode size={16} />}
             title={t('config_management.visual.sections.payload.title')}
             description={t('config_management.visual.sections.payload.description')}

@@ -2,6 +2,8 @@ import { useCallback, useMemo, useReducer } from 'react';
 import { isMap, parse as parseYaml, parseDocument } from 'yaml';
 import type {
   DisableImageGenerationMode,
+  KeywordFilterEntry,
+  KeywordFilterMatchMode,
   PayloadFilterRule,
   PayloadHeaderEntry,
   PayloadParamEntry,
@@ -348,6 +350,24 @@ function arePayloadFilterRulesEqual(
   return true;
 }
 
+function areKeywordFilterEntriesEqual(
+  left: KeywordFilterEntry[],
+  right: KeywordFilterEntry[]
+): boolean {
+  if (left === right) return true;
+  if (left.length !== right.length) return false;
+  for (let i = 0; i < left.length; i += 1) {
+    const a = left[i];
+    const b = right[i];
+    if (!a || !b) return false;
+    if (a.id !== b.id) return false;
+    if (a.keyword !== b.keyword) return false;
+    if (a.matchMode !== b.matchMode) return false;
+    if (a.enabled !== b.enabled) return false;
+  }
+  return true;
+}
+
 function parsePayloadParamValue(raw: unknown): { valueType: PayloadParamValueType; value: string } {
   if (typeof raw === 'number') {
     return { valueType: 'number', value: String(raw) };
@@ -645,6 +665,42 @@ function serializePayloadFilterRulesForYaml(
     .filter((rule) => rule.models.length > 0);
 }
 
+function parseKeywordFilterEntries(raw: unknown): KeywordFilterEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const entries: KeywordFilterEntry[] = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const item = asRecord(raw[i]);
+    if (!item) continue;
+    const keyword = typeof item.keyword === 'string' ? item.keyword.trim() : '';
+    if (!keyword) continue;
+    const matchMode: KeywordFilterMatchMode =
+      item['match-mode'] === 'start' ||
+      item['match-mode'] === 'end' ||
+      item['match-mode'] === 'exact'
+        ? item['match-mode']
+        : 'anywhere';
+    const enabled = item.enabled !== false;
+    entries.push({ id: `keyword-filter-${i}`, keyword, matchMode, enabled });
+  }
+  return entries;
+}
+
+function serializeKeywordFilterEntriesForYaml(
+  entries: KeywordFilterEntry[]
+): Array<Record<string, unknown>> {
+  const result: Array<Record<string, unknown>> = [];
+  for (const entry of entries) {
+    const keyword = entry.keyword.trim();
+    if (!keyword) continue;
+    result.push({
+      keyword,
+      'match-mode': entry.matchMode,
+      enabled: entry.enabled,
+    });
+  }
+  return result;
+}
+
 function serializeRawPayloadRulesForYaml(rules: PayloadRule[]): Array<Record<string, unknown>> {
   return rules
     .map((rule) => {
@@ -892,6 +948,12 @@ function getNextDirtyFields(
       arePayloadFilterRulesEqual(nextValues.payloadFilterRules, baselineValues.payloadFilterRules)
     );
   }
+  if (Object.prototype.hasOwnProperty.call(patch, 'keywordFilters')) {
+    updateDirty(
+      'keywordFilters',
+      areKeywordFilterEntriesEqual(nextValues.keywordFilters, baselineValues.keywordFilters)
+    );
+  }
   if (patch.streaming) {
     const streamingPatch = patch.streaming;
     if (Object.prototype.hasOwnProperty.call(streamingPatch, 'keepaliveSeconds')) {
@@ -996,6 +1058,7 @@ export function useVisualConfig() {
       const quotaExceeded = asRecord(parsed['quota-exceeded']);
       const routing = asRecord(parsed.routing);
       const payload = asRecord(parsed.payload);
+      const keywordFiltersRaw = parsed['keyword-filters'];
       const streaming = asRecord(parsed.streaming);
       const claudeHeaderDefaults = asRecord(parsed['claude-header-defaults']);
       const codexHeaderDefaults = asRecord(parsed['codex-header-defaults']);
@@ -1102,6 +1165,7 @@ export function useVisualConfig() {
         payloadOverrideRules: parsePayloadRules(payload?.override),
         payloadOverrideRawRules: parseRawPayloadRules(payload?.['override-raw']),
         payloadFilterRules: parsePayloadFilterRules(payload?.filter),
+        keywordFilters: parseKeywordFilterEntries(keywordFiltersRaw),
 
         streaming: {
           keepaliveSeconds: String(streaming?.['keepalive-seconds'] ?? ''),
@@ -1352,6 +1416,15 @@ export function useVisualConfig() {
         }
 
         setIntFromStringInDoc(doc, ['nonstream-keepalive-interval'], nonstreamKeepaliveInterval);
+
+        if (values.keywordFilters.length > 0) {
+          doc.setIn(
+            ['keyword-filters'],
+            serializeKeywordFilterEntriesForYaml(values.keywordFilters)
+          );
+        } else if (docHas(doc, ['keyword-filters'])) {
+          doc.deleteIn(['keyword-filters']);
+        }
 
         if (
           docHas(doc, ['payload']) ||

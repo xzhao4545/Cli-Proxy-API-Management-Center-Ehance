@@ -1,5 +1,6 @@
 export type PayloadParamValueType = 'string' | 'number' | 'boolean' | 'json';
 export type DisableImageGenerationMode = 'false' | 'true' | 'chat';
+export type KeywordFilterMatchMode = 'anywhere' | 'start' | 'end' | 'exact';
 export type PayloadParamValidationErrorCode =
   | 'payload_invalid_number'
   | 'payload_invalid_boolean'
@@ -61,6 +62,13 @@ export type PayloadFilterRule = {
   params: string[];
 };
 
+export type KeywordFilterEntry = {
+  id: string;
+  keyword: string;
+  matchMode: KeywordFilterMatchMode;
+  enabled: boolean;
+};
+
 export interface StreamingConfig {
   keepaliveSeconds: string;
   bootstrapRetries: string;
@@ -120,6 +128,7 @@ export type VisualConfigValues = {
   payloadOverrideRules: PayloadRule[];
   payloadOverrideRawRules: PayloadRule[];
   payloadFilterRules: PayloadFilterRule[];
+  keywordFilters: KeywordFilterEntry[];
   streaming: StreamingConfig;
 };
 
@@ -181,6 +190,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   payloadOverrideRules: [],
   payloadOverrideRawRules: [],
   payloadFilterRules: [],
+  keywordFilters: [],
   streaming: {
     keepaliveSeconds: '',
     bootstrapRetries: '',

@@ -746,6 +746,8 @@
     "error_http": "HTTP",
     "error_upstream": "Upstream",
     "custom_range": "Custom Range",
+    "range_from": "Start Time",
+    "range_to": "End Time",
     "page_jump": "Page"
   },
   "stats": {
@@ -994,6 +996,12 @@
           "nonstream_keepalive_hint": "Send blank lines every N seconds for non-streaming responses to prevent idle timeout, set to 0 or leave empty to disable",
           "disabled": "Disabled"
         },
+        "keyword_filters": {
+          "title": "Keyword Filters",
+          "description": "Detect unwanted keywords in upstream responses and trigger provider failover",
+          "rules": "Keyword Filter Rules",
+          "rules_desc": "Each rule defines a keyword to match in upstream responses; on match, the provider is marked as failed and the next provider is tried"
+        },
         "payload": {
           "title": "Payload Configuration",
           "description": "Default values, raw JSON rules, override rules, and filter rules",
@@ -1072,6 +1080,24 @@
         "value_default": "Value",
         "boolean_true": "true",
         "boolean_false": "false"
+      },
+      "keyword_filters": {
+        "entry": "Entry",
+        "keyword": "Keyword",
+        "keyword_placeholder": "Enter keyword to match",
+        "match_mode": "Match Mode",
+        "match_anywhere": "Anywhere",
+        "match_start": "Start",
+        "match_end": "End",
+        "match_exact": "Exact",
+        "enabled": "Enabled",
+        "enabled_on": "Enabled",
+        "enabled_off": "Disabled",
+        "no_entries": "No keyword filter entries",
+        "add_entry": "Add Entry",
+        "delete_confirm_title": "Delete keyword filter entry",
+        "delete_confirm_message": "Delete keyword filter entry \"{{keyword}}\"?",
+        "delete_confirm_fallback": "Entry {{index}}"
       },
       "validation": {
         "validation_blocked": "Fix validation errors before saving",
