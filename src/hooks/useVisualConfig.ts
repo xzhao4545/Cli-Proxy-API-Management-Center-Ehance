@@ -364,6 +364,7 @@ function areKeywordFilterEntriesEqual(
     if (a.keyword !== b.keyword) return false;
     if (a.matchMode !== b.matchMode) return false;
     if (a.enabled !== b.enabled) return false;
+    if (a.caseSensitive !== b.caseSensitive) return false;
   }
   return true;
 }
@@ -680,7 +681,8 @@ function parseKeywordFilterEntries(raw: unknown): KeywordFilterEntry[] {
         ? item['match-mode']
         : 'anywhere';
     const enabled = item.enabled !== false;
-    entries.push({ id: `keyword-filter-${i}`, keyword, matchMode, enabled });
+    const caseSensitive = item['case-sensitive'] === true;
+    entries.push({ id: `keyword-filter-${i}`, keyword, matchMode, enabled, caseSensitive });
   }
   return entries;
 }
@@ -696,6 +698,7 @@ function serializeKeywordFilterEntriesForYaml(
       keyword,
       'match-mode': entry.matchMode,
       enabled: entry.enabled,
+      'case-sensitive': entry.caseSensitive,
     });
   }
   return result;

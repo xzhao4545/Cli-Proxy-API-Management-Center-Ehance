@@ -486,7 +486,10 @@ export const KeywordFilterEditor = memo(function KeywordFilterEditor({
   );
 
   const addEntry = () =>
-    onChange([...entries, { id: makeClientId(), keyword: '', matchMode: 'anywhere', enabled: true }]);
+    onChange([
+      ...entries,
+      { id: makeClientId(), keyword: '', matchMode: 'anywhere', enabled: true, caseSensitive: false },
+    ]);
 
   const removeEntry = (entryIndex: number) =>
     onChange(entries.filter((_, i) => i !== entryIndex));
@@ -560,6 +563,19 @@ export const KeywordFilterEditor = memo(function KeywordFilterEditor({
                 {entry.enabled
                   ? t('config_management.visual.keyword_filters.enabled_on')
                   : t('config_management.visual.keyword_filters.enabled_off')}
+              </span>
+            </div>
+            <div className={styles.keywordFilterToggleRow}>
+              <ToggleSwitch
+                checked={entry.caseSensitive}
+                onChange={(nextValue) => updateEntry(entryIndex, { caseSensitive: nextValue })}
+                disabled={disabled}
+                ariaLabel={t('config_management.visual.keyword_filters.case_sensitive')}
+              />
+              <span className={styles.keywordFilterToggleLabel}>
+                {entry.caseSensitive
+                  ? t('config_management.visual.keyword_filters.case_sensitive_on')
+                  : t('config_management.visual.keyword_filters.case_sensitive_off')}
               </span>
             </div>
           </div>

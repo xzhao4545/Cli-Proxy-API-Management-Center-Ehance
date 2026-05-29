@@ -67,6 +67,7 @@ export type KeywordFilterEntry = {
   keyword: string;
   matchMode: KeywordFilterMatchMode;
   enabled: boolean;
+  caseSensitive: boolean;
 };
 
 export interface StreamingConfig {
