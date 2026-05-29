@@ -13,6 +13,7 @@ export interface AmpcodeUpstreamApiKeyMapping {
 }
 
 export interface AmpcodeConfig {
+  label?: string;
   upstreamUrl?: string;
   upstreamApiKey?: string;
   upstreamApiKeys?: AmpcodeUpstreamApiKeyMapping[];

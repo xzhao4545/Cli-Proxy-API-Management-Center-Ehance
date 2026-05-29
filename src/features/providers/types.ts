@@ -19,6 +19,7 @@ export type ProviderResourceSelector =
   | { brand: 'ampcode' };
 
 export interface ProviderResourceFlags {
+  label?: string;
   cloakEnabled?: boolean;
   websockets?: boolean;
   forceModelMappings?: boolean;
@@ -50,6 +51,8 @@ export interface ProviderResource {
   apiKeyEntryCount: number;
   /** 是否被禁用(各 brand 判定规则不同) */
   disabled: boolean;
+  /** 优先级（配置中设置的值，默认 null） */
+  priority: number | null;
   /** 额外能力旗标 */
   flags: ProviderResourceFlags;
   /** 删除/更新使用的 selector */
@@ -106,6 +109,7 @@ export interface ProviderEntryFormInput {
   apiKey: string;
   /** OpenAI 必填,其余 brand 不展示 */
   name: string;
+  label: string;
   baseUrl: string;
   proxyUrl: string;
   prefix: string;

@@ -74,6 +74,7 @@ function buildInitialForm(
     return {
       apiKey: '',
       name: '',
+      label: '',
       baseUrl: '',
       proxyUrl: '',
       prefix: '',
@@ -100,6 +101,7 @@ function buildInitialForm(
     return {
       apiKey: '',
       name: cfg.name ?? '',
+      label: '',
       baseUrl: cfg.baseUrl ?? '',
       proxyUrl: '',
       prefix: cfg.prefix ?? '',
@@ -135,6 +137,7 @@ function buildInitialForm(
   return {
     apiKey: '',
     name: '',
+    label: cfg.label ?? '',
     baseUrl: cfg.baseUrl ?? '',
     proxyUrl: cfg.proxyUrl ?? '',
     prefix: cfg.prefix ?? '',
@@ -444,6 +447,22 @@ export function BaseProviderForm({
               className={styles.input}
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
+              disabled={mutating}
+            />
+          </div>
+        ) : null}
+
+        {descriptor.supportsLabel ? (
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor={`${fid}-label`}>
+              {t('providersPage.form.label')}
+            </label>
+            <input
+              id={`${fid}-label`}
+              className={styles.input}
+              value={form.label}
+              onChange={(e) => updateField('label', e.target.value)}
+              placeholder={t('providersPage.form.labelPlaceholder')}
               disabled={mutating}
             />
           </div>

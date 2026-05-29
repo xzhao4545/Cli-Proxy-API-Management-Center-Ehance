@@ -3,6 +3,7 @@
     "login": "Войти",
     "logout": "Выйти",
     "back": "Назад",
+    "next": "Далее",
     "cancel": "Отмена",
     "confirm": "Подтвердить",
     "leave": "Уйти",
@@ -109,16 +110,17 @@
     "status": "Статус подключения:"
   },
   "nav": {
-    "dashboard": "Панель",
+    "dashboard": "Панель управления",
     "basic_settings": "Основные настройки",
-    "api_keys": "API ключи",
-    "ai_providers": "Поставщики AI",
-    "auth_files": "Файлы аутентификации",
+    "api_keys": "API-ключи",
+    "ai_providers": "AI провайдеры",
+    "auth_files": "Файлы авторизации",
     "oauth": "OAuth вход",
+    "usage_stats": "Статистика",
     "quota_management": "Управление квотами",
     "config_management": "Панель конфигурации",
-    "logs": "Просмотр логов",
-    "system_info": "Информация системы"
+    "logs": "Журнал",
+    "system_info": "Информация о центре"
   },
   "nav_groups": {
     "operate": "Работа",
@@ -127,14 +129,15 @@
     "control": "Управление"
   },
   "nav_meta": {
-    "dashboard": "Обзор работы",
+    "dashboard": "Обзор операций",
     "ai_providers": "Маршрутизация моделей",
     "auth_files": "Файлы и учётные данные",
-    "oauth": "Авторизация OAuth",
-    "quota_management": "API ключи и лимиты",
-    "logs": "Трассировка запросов",
-    "config_management": "Базовая конфигурация шлюза",
-    "system_info": "Состояние и диагностика"
+    "oauth": "OAuth авторизация",
+    "usage_stats": "Статистика запросов",
+    "quota_management": "API-ключи и лимиты",
+    "logs": "Отслеживание запросов",
+    "config_management": "Конфигурация шлюза",
+    "system_info": "Диагностика"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -710,6 +713,38 @@
     "iflow_oauth_polling_error": "Не удалось проверить статус аутентификации:",
     "remote_access_disabled": "Этот способ входа недоступен при удалённом доступе. Подключитесь с localhost."
   },
+  "usage": {
+    "title": "Статистика использования",
+    "total_requests": "Всего запросов",
+    "success_rate": "Успешность",
+    "total_tokens": "Всего токенов",
+    "provider_breakdown": "По провайдерам",
+    "recent_requests": "Последние запросы",
+    "time": "Время",
+    "provider": "Провайдер",
+    "model": "Модель",
+    "duration": "Длительность",
+    "tokens": "Токены",
+    "status": "Статус",
+    "error": "Ошибка",
+    "filter_all": "Все",
+    "no_events": "Нет событий использования",
+    "disabled_message": "Статистика использования отключена в конфигурации сервера. Включите «Постоянную статистику» в настройках, чтобы начать сбор данных.",
+    "go_to_config": "Открыть настройки",
+    "token_breakdown": "Разбивка токенов",
+    "token_prompt": "Ввод",
+    "token_completion": "Вывод",
+    "token_reasoning": "Рассуждение",
+    "token_cached": "Кэш",
+    "token_total": "Итого",
+    "error_details": "Детали ошибки",
+    "error_stage": "Этап",
+    "error_code": "Код",
+    "error_http": "HTTP",
+    "error_upstream": "Вышестоящий",
+    "custom_range": "Свой диапазон",
+    "page_jump": "Страница"
+  },
   "stats": {
     "success": "Успех",
     "failure": "Сбой"
@@ -880,8 +915,8 @@
           "logging_to_file_desc": "Сохранять журналы в файлы",
           "logs_max_size": "Максимальный размер файла журнала (МБ)",
           "error_logs_max_files": "Файлов журнала ошибок",
-          "usage_statistics_enabled": "Включить статистику использования в памяти",
-          "usage_statistics_enabled_desc": "Агрегировать статистику использования запросов в памяти",
+          "usage_sqlite_enabled": "Включить постоянную статистику",
+          "usage_sqlite_enabled_desc": "Записывать события использования в SQLite для запросов и анализа",
           "redis_usage_retention": "Хранение очереди Redis usage (сек)",
           "redis_usage_retention_hint": "Время хранения вывода RESP LPOP/RPOP в памяти, максимум 3600 секунд",
           "antigravity_signature_cache": "Включить кэш подписей Antigravity",
@@ -1232,7 +1267,8 @@
       "ampcode": "Amp CLI"
     },
     "table": {
-      "key": "Ключ",
+      "label": "Метка",
+      "priority": "Приоритет",
       "baseUrl": "Base URL",
       "prefix": "Префикс",
       "models": "Модели/Заголовки",
@@ -1279,6 +1315,8 @@
       "createEyebrow": "Создать",
       "editEyebrow": "Изменить",
       "name": "Название",
+      "label": "Метка",
+      "labelPlaceholder": "Понятное имя в отчётах",
       "apiKey": "API-ключ",
       "apiKeyCreatePlaceholder": "Введите API-ключ",
       "apiKeyEditPlaceholder": "Оставьте пустым, чтобы не менять",

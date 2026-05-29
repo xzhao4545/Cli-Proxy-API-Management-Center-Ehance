@@ -35,7 +35,9 @@ function providerKeyToResource(
 ): ProviderResource {
   const apiKey = config.apiKey ?? '';
   const disabled = hasDisableAllModelsRule(config.excludedModels);
-  const flags: ProviderResource['flags'] = {};
+  const flags: ProviderResource['flags'] = {
+    label: config.label?.trim() || undefined,
+  };
   if (brand === 'codex') {
     flags.websockets = (config as ProviderKeyConfig).websockets === true;
   }
@@ -67,6 +69,7 @@ function providerKeyToResource(
     headerCount: countHeaders(config.headers),
     excludedModelCount: stripDisableAllModelsRule(config.excludedModels).length,
     apiKeyEntryCount: 0,
+    priority: config.priority ?? null,
     disabled,
     flags,
     selector,
@@ -113,8 +116,11 @@ export function openaiToResource(
     headerCount: countHeaders(config.headers),
     excludedModelCount: 0,
     apiKeyEntryCount: config.apiKeyEntries?.length ?? 0,
+    priority: config.priority ?? null,
     disabled: config.disabled === true,
-    flags: {},
+    flags: {
+      label: config.label?.trim() || undefined,
+    },
     selector: { brand: 'openaiCompatibility', name, index },
     raw: config,
   };
@@ -142,8 +148,10 @@ export function ampcodeToResource(config?: AmpcodeConfig | null): ProviderResour
     headerCount: 0,
     excludedModelCount: 0,
     apiKeyEntryCount: upstreamKeyMappingsCount,
+    priority: null,
     disabled: !hasUpstream,
     flags: {
+      label: safe.label?.trim() || undefined,
       forceModelMappings: safe.forceModelMappings === true,
       isPlaceholder: !hasUpstream && upstreamKeyMappingsCount === 0,
     },

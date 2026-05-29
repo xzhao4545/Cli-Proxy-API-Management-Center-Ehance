@@ -692,13 +692,13 @@ export function VisualConfigEditor({
               </SectionGrid>
               <SectionGrid>
                 <ToggleRow
-                  title={t('config_management.visual.sections.system.usage_statistics_enabled')}
+                  title={t('config_management.visual.sections.system.usage_sqlite_enabled')}
                   description={t(
-                    'config_management.visual.sections.system.usage_statistics_enabled_desc'
+                    'config_management.visual.sections.system.usage_sqlite_enabled_desc'
                   )}
-                  checked={values.usageStatisticsEnabled}
+                  checked={values.usageSqliteEnabled}
                   disabled={disabled}
-                  onChange={(usageStatisticsEnabled) => onChange({ usageStatisticsEnabled })}
+                  onChange={(usageSqliteEnabled) => onChange({ usageSqliteEnabled })}
                 />
                 <ToggleRow
                   title={t('config_management.visual.sections.system.antigravity_signature_cache')}

@@ -131,6 +131,10 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
   if (!trimmed) return null;
 
   const config: ProviderKeyConfig = { apiKey: trimmed };
+  const label = record?.label ?? (record ? record['label'] : undefined);
+  if (label && String(label).trim()) {
+    config.label = String(label).trim();
+  }
   const priority = record?.priority ?? record?.['priority'];
   if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
     const parsed = Number(priority);
@@ -200,6 +204,10 @@ const normalizeGeminiKeyConfig = (item: unknown): GeminiKeyConfig | null => {
   if (!trimmed) return null;
 
   const config: GeminiKeyConfig = { apiKey: trimmed };
+  const label = record?.label ?? (record ? record['label'] : undefined);
+  if (label && String(label).trim()) {
+    config.label = String(label).trim();
+  }
   const priority = record?.priority ?? record?.['priority'];
   if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
     const parsed = Number(priority);
@@ -253,6 +261,9 @@ const normalizeOpenAIProvider = (provider: unknown): OpenAIProviderConfig | null
     baseUrl: String(baseUrl),
     apiKeyEntries
   };
+
+  const label = provider.label ?? provider['label'];
+  if (label && String(label).trim()) result.label = String(label).trim();
 
   const disabled = normalizeBoolean(provider.disabled ?? provider['disabled']);
   if (disabled !== undefined) result.disabled = disabled;
@@ -335,6 +346,8 @@ const normalizeAmpcodeConfig = (payload: unknown): AmpcodeConfig | undefined => 
   const source = sourceRaw;
 
   const config: AmpcodeConfig = {};
+  const label = source.label ?? source['label'];
+  if (label && String(label).trim()) config.label = String(label).trim();
   const upstreamUrl = source['upstream-url'] ?? source.upstreamUrl ?? source['upstream_url'];
   if (upstreamUrl) config.upstreamUrl = String(upstreamUrl);
   const upstreamApiKey = source['upstream-api-key'] ?? source.upstreamApiKey ?? source['upstream_api_key'];

@@ -3,6 +3,7 @@ import type { ProviderBrand } from './types';
 export interface ProviderDescriptor {
   id: ProviderBrand;
   supportsName: boolean;
+  supportsLabel: boolean;
   supportsApiKey: boolean;
   supportsDisabled: boolean;
   supportsBaseUrl: boolean;
@@ -26,6 +27,7 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
   gemini: {
     id: 'gemini',
     supportsName: false,
+    supportsLabel: true,
     supportsApiKey: true,
     supportsDisabled: true,
     supportsBaseUrl: true,
@@ -46,6 +48,7 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
   codex: {
     id: 'codex',
     supportsName: false,
+    supportsLabel: true,
     supportsApiKey: true,
     supportsDisabled: true,
     supportsBaseUrl: true,
@@ -66,6 +69,7 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
   claude: {
     id: 'claude',
     supportsName: false,
+    supportsLabel: true,
     supportsApiKey: true,
     supportsDisabled: true,
     supportsBaseUrl: true,
@@ -86,6 +90,7 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
   vertex: {
     id: 'vertex',
     supportsName: false,
+    supportsLabel: true,
     supportsApiKey: true,
     supportsDisabled: true,
     supportsBaseUrl: true,
@@ -106,6 +111,7 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
   openaiCompatibility: {
     id: 'openaiCompatibility',
     supportsName: true,
+    supportsLabel: false,
     supportsApiKey: false,
     supportsDisabled: true,
     supportsBaseUrl: true,
@@ -126,6 +132,7 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
   ampcode: {
     id: 'ampcode',
     supportsName: false,
+    supportsLabel: false,
     supportsApiKey: false,
     supportsDisabled: false,
     supportsBaseUrl: true,

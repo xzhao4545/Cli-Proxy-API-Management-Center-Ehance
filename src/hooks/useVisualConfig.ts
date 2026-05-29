@@ -727,7 +727,7 @@ function getNextDirtyFields(
     [
       'rmDisableAutoUpdatePanel',
       'errorLogsMaxFiles',
-      'usageStatisticsEnabled',
+      'usageSqliteEnabled',
       'redisUsageQueueRetentionSeconds',
       'passthroughHeaders',
       'disableCooling',
@@ -992,6 +992,7 @@ export function useVisualConfig() {
       const parsed = asRecord(parsedRaw) ?? {};
       const tls = asRecord(parsed.tls);
       const remoteManagement = asRecord(parsed['remote-management']);
+      const usage = asRecord(parsed.usage);
       const quotaExceeded = asRecord(parsed['quota-exceeded']);
       const routing = asRecord(parsed.routing);
       const payload = asRecord(parsed.payload);
@@ -1029,7 +1030,7 @@ export function useVisualConfig() {
         loggingToFile: Boolean(parsed['logging-to-file']),
         logsMaxTotalSizeMb: String(parsed['logs-max-total-size-mb'] ?? ''),
         errorLogsMaxFiles: String(parsed['error-logs-max-files'] ?? ''),
-        usageStatisticsEnabled: Boolean(parsed['usage-statistics-enabled']),
+        usageSqliteEnabled: Boolean(usage?.enabled),
         redisUsageQueueRetentionSeconds: String(
           parsed['redis-usage-queue-retention-seconds'] ?? ''
         ),
@@ -1190,7 +1191,13 @@ export function useVisualConfig() {
         setBooleanInDoc(doc, ['logging-to-file'], values.loggingToFile);
         setIntFromStringInDoc(doc, ['logs-max-total-size-mb'], values.logsMaxTotalSizeMb);
         setIntFromStringInDoc(doc, ['error-logs-max-files'], values.errorLogsMaxFiles);
-        setBooleanInDoc(doc, ['usage-statistics-enabled'], values.usageStatisticsEnabled);
+        if (values.usageSqliteEnabled) {
+          ensureMapInDoc(doc, ['usage']);
+          doc.setIn(['usage', 'enabled'], true);
+        } else if (docHas(doc, ['usage', 'enabled'])) {
+          doc.setIn(['usage', 'enabled'], false);
+        }
+        deleteIfMapEmpty(doc, ['usage']);
         setIntFromStringInDoc(
           doc,
           ['redis-usage-queue-retention-seconds'],

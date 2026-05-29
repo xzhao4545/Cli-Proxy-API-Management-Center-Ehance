@@ -41,7 +41,7 @@ interface ProviderResourceTableProps {
   onToggleDisabled?: (resource: ProviderResource, disabled: boolean) => void;
 }
 
-const columnWidths = ['18%', '18%', '6%', '14%', '24%', '20%'];
+const columnWidths = ['40px', '18%', '6%', '18%', '6%', '14%', '20%', '18%'];
 
 const resolveStatusBarData = (
   resource: ProviderResource,
@@ -157,38 +157,6 @@ export function ProviderResourceTable({
     );
   };
 
-  const renderPrimary = (r: ProviderResource) => {
-    if (r.brand === 'openaiCompatibility') {
-      const extra = r.apiKeyEntryCount > 1 ? ` · +${r.apiKeyEntryCount - 1}` : '';
-      return (
-        <div className={styles.primaryCell}>
-          <span className={styles.primaryName}>{r.name ?? r.identifier}</span>
-          <span className={styles.primarySub}>
-            {(r.apiKeyPreview ?? '—') + extra}
-          </span>
-        </div>
-      );
-    }
-    if (r.brand === 'ampcode') {
-      return (
-        <div className={styles.primaryCell}>
-          <span className={styles.primaryName}>Amp CLI</span>
-          <span className={styles.primarySub}>
-            {r.apiKeyPreview ?? t('providersPage.table.noFallbackKey')}
-          </span>
-        </div>
-      );
-    }
-    return (
-      <div className={styles.primaryCell}>
-        <span className={styles.primaryName}>{r.apiKeyPreview ?? '—'}</span>
-        {r.authIndex ? (
-          <span className={styles.primarySub}>auth: {r.authIndex}</span>
-        ) : null}
-      </div>
-    );
-  };
-
   const renderBaseUrl = (r: ProviderResource) => {
     if (r.brand === 'claude' && !r.baseUrl) {
       return (
@@ -215,7 +183,9 @@ export function ProviderResourceTable({
     >
       <TableHeader>
         <TableRow>
-          <TableHead>{t('providersPage.table.key')}</TableHead>
+          <TableHead style={{ width: 40, textAlign: 'center' }}>#</TableHead>
+          <TableHead>{t('providersPage.table.label')}</TableHead>
+          <TableHead>{t('providersPage.table.priority')}</TableHead>
           <TableHead>{t('providersPage.table.baseUrl')}</TableHead>
           <TableHead>{t('providersPage.table.prefix')}</TableHead>
           <TableHead>{t('providersPage.table.models')}</TableHead>
@@ -224,11 +194,21 @@ export function ProviderResourceTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {resources.map((resource) => {
+        {resources.map((resource, seq) => {
           const isAmpcode = resource.brand === 'ampcode';
+          const labelText = resource.flags.label
+            || (resource.brand === 'openaiCompatibility' ? resource.name || resource.identifier : `${resource.brand}#${seq}`);
           return (
             <TableRow key={resource.id} selected={resource.id === selectedId}>
-              <TableCell>{renderPrimary(resource)}</TableCell>
+              <TableCell style={{ textAlign: 'center', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>
+                {seq}
+              </TableCell>
+              <TableCell>
+                <span className={styles.labelCell}>{labelText}</span>
+              </TableCell>
+              <TableCell style={{ textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                {resource.priority ?? '—'}
+              </TableCell>
               <TableCell>{renderBaseUrl(resource)}</TableCell>
               <TableCell>
                 {resource.brand === 'ampcode' ? (
