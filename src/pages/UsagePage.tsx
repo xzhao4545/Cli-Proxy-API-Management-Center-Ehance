@@ -214,9 +214,66 @@ function PortalPopover({
   );
 }
 
+type TokenItem = {
+  icon: string;
+  label: string;
+  value: number;
+  tone: string;
+};
+
+function TokenHintPopover({
+  item,
+  triggerRef,
+  onClose,
+}: {
+  item: TokenItem;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+  onClose: () => void;
+}) {
+  return (
+    <PortalPopover triggerRef={triggerRef} onClose={onClose} className={styles.tokenHintPopover}>
+      <div className={styles.tokenHintBody}>
+        <span className={`${styles.tokenHintIcon} ${item.tone}`}>{item.icon}</span>
+        <div className={styles.tokenHintText}>
+          <span className={styles.tokenHintLabel}>{item.label}</span>
+          <span className={styles.tokenHintValue}>{item.value.toLocaleString()}</span>
+        </div>
+      </div>
+    </PortalPopover>
+  );
+}
+
+function TokenInlineButton({
+  item,
+}: {
+  item: TokenItem;
+}) {
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        className={`${styles.tokenInlineItem} ${item.tone}`}
+        title={item.label}
+        aria-label={`${item.label}: ${item.value.toLocaleString()}`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className={styles.tokenInlineIcon}>{item.icon}</span>
+        <span className={styles.tokenInlineValue}>{item.value.toLocaleString()}</span>
+      </button>
+      {open ? (
+        <TokenHintPopover item={item} triggerRef={buttonRef} onClose={() => setOpen(false)} />
+      ) : null}
+    </>
+  );
+}
+
 function TokenCell({ event }: { event: UsageEvent }) {
   const { t } = useTranslation();
-  const items = [
+  const items: TokenItem[] = [
     { icon: '↑', label: t('usage.token_prompt'), value: event.prompt_tokens, tone: styles.tokenIn },
     { icon: '↓', label: t('usage.token_completion'), value: event.completion_tokens, tone: styles.tokenOut },
     { icon: '◈', label: t('usage.token_reasoning'), value: event.reasoning_tokens, tone: styles.tokenReasoning },
@@ -227,10 +284,7 @@ function TokenCell({ event }: { event: UsageEvent }) {
   return (
     <div className={styles.tokenInlineGrid}>
       {items.map((item) => (
-        <span key={item.label} className={`${styles.tokenInlineItem} ${item.tone}`} title={item.label}>
-          <span className={styles.tokenInlineIcon}>{item.icon}</span>
-          <span className={styles.tokenInlineValue}>{item.value.toLocaleString()}</span>
-        </span>
+        <TokenInlineButton key={item.label} item={item} />
       ))}
     </div>
   );

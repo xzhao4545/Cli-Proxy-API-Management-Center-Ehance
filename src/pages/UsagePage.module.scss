@@ -489,11 +489,28 @@
   gap: 5px;
   min-width: 0;
   padding: 1px 6px;
+  border: 1px solid transparent;
   border-radius: $radius-sm;
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-size: 10px;
+  font-family: inherit;
   line-height: 1.45;
+  cursor: pointer;
+  transition: border-color $transition-fast, transform $transition-fast, background $transition-fast;
+
+  &:hover {
+    border-color: currentColor;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
 }
 
 .tokenInlineIcon {
@@ -534,6 +551,52 @@
 .tokenTotal {
   background: color-mix(in srgb, var(--text-primary) 8%, transparent);
   color: var(--text-primary);
+}
+
+.tokenHintPopover {
+  min-width: 150px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.tokenHintBody {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.tokenHintIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: $radius-sm;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tokenHintText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tokenHintLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tokenHintValue {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Error cell & popover ── */
