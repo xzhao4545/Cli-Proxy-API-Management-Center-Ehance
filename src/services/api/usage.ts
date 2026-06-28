@@ -25,9 +25,9 @@ const asNumber = (value: unknown): number => (typeof value === 'number' && Numbe
 const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 const normalizeCacheHitRate = (cacheHitRate: unknown, cachedTokens: number, promptTokens: number): number => {
-  const explicitRate = asNumber(cacheHitRate);
-  if (explicitRate > 0 || promptTokens <= 0) return explicitRate;
-  return cachedTokens / promptTokens;
+  if (typeof cacheHitRate === 'number' && Number.isFinite(cacheHitRate)) return cacheHitRate;
+  if (promptTokens > 0) return cachedTokens / promptTokens;
+  return Number.NaN;
 };
 
 const normalizeProviderMetric = (value: unknown): ProviderMetric => {
