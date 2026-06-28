@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import {
   IconLoader2,
   IconAlertTriangle,
   IconSettings,
+  IconInfo,
   IconX,
 } from '@/components/ui/icons';
 import { Select, type SelectOption } from '@/components/ui/Select';
@@ -175,14 +176,24 @@ function PortalPopover({
   triggerRef,
   onClose,
   className,
+  placement = 'bottom',
 }: {
   children: ReactNode;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
   onClose: () => void;
   className?: string;
+  placement?: 'bottom' | 'left-or-top';
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<React.CSSProperties | null>(null);
+  const measuringStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    zIndex: 9999,
+    visibility: 'hidden',
+    pointerEvents: 'none',
+  };
 
   useEffect(() => {
     const handler = (e: PointerEvent) => {
@@ -195,101 +206,106 @@ function PortalPopover({
     return () => document.removeEventListener('pointerdown', handler);
   }, [onClose, triggerRef]);
 
-  useEffect(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom - 8;
-    const popoverH = Math.min(260, spaceBelow);
-    setStyle({
-      position: 'fixed',
-      top: Math.min(rect.bottom + 4, window.innerHeight - popoverH - 8),
-      left: Math.max(8, Math.min(rect.left, window.innerWidth - 400)),
-      zIndex: 9999,
-    });
-  }, [triggerRef]);
+  useLayoutEffect(() => {
+    let frameId: number | null = null;
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const popoverRect = ref.current?.getBoundingClientRect();
+      const popoverW = popoverRect?.width ?? (placement === 'left-or-top' ? 180 : 400);
+      const popoverH = popoverRect?.height ?? 220;
+      const gap = 6;
+      const margin = 8;
+      let top: number;
+      let left: number;
 
-  if (!style || typeof document === 'undefined') return null;
+      if (placement === 'left-or-top') {
+        const hasLeftRoom = rect.left >= popoverW + gap + margin;
+        if (hasLeftRoom) {
+          top = rect.top + rect.height / 2 - popoverH / 2;
+          left = rect.left - popoverW - gap;
+        } else {
+          top = rect.top - popoverH - gap;
+          left = rect.left + rect.width / 2 - popoverW / 2;
+        }
+      } else {
+        top = rect.bottom + gap;
+        left = rect.left;
+      }
+
+      setStyle({
+        position: 'fixed',
+        top: Math.max(margin, Math.min(top, window.innerHeight - popoverH - margin)),
+        left: Math.max(margin, Math.min(left, window.innerWidth - popoverW - margin)),
+        zIndex: 9999,
+      });
+    };
+
+    updatePosition();
+    frameId = window.requestAnimationFrame(updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [placement, triggerRef]);
+
+  if (typeof document === 'undefined') return null;
   return createPortal(
-    <div ref={ref} className={className || ''} style={style}>
+    <div ref={ref} className={className || ''} style={style ?? measuringStyle}>
       {children}
     </div>,
     document.body
   );
 }
 
-type TokenItem = {
-  icon: string;
-  label: string;
-  value: number;
-  tone: string;
-};
-
-function TokenHintPopover({
-  item,
+/* ─────────── Token tooltip popover ─────────── */
+function TokenPopover({
+  event,
   triggerRef,
   onClose,
 }: {
-  item: TokenItem;
+  event: UsageEvent;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
-    <PortalPopover triggerRef={triggerRef} onClose={onClose} className={styles.tokenHintPopover}>
-      <div className={styles.tokenHintBody}>
-        <span className={`${styles.tokenHintIcon} ${item.tone}`}>{item.icon}</span>
-        <div className={styles.tokenHintText}>
-          <span className={styles.tokenHintLabel}>{item.label}</span>
-          <span className={styles.tokenHintValue}>{item.value.toLocaleString()}</span>
+    <PortalPopover
+      triggerRef={triggerRef}
+      onClose={onClose}
+      className={styles.tokenPopover}
+      placement="left-or-top"
+    >
+      <div className={styles.tokenPopoverHead}>
+        <span>{t('usage.token_breakdown')}</span>
+        <button type="button" className={styles.tokenPopoverClose} onClick={onClose}>
+          <IconX size={12} />
+        </button>
+      </div>
+      <div className={styles.tokenPopoverBody}>
+        <div className={styles.tokenPopoverRow}>
+          <span>{t('usage.token_prompt')}</span><span>{event.prompt_tokens.toLocaleString()}</span>
+        </div>
+        <div className={styles.tokenPopoverRow}>
+          <span>{t('usage.token_completion')}</span><span>{event.completion_tokens.toLocaleString()}</span>
+        </div>
+        <div className={styles.tokenPopoverRow}>
+          <span>{t('usage.token_reasoning')}</span><span>{event.reasoning_tokens.toLocaleString()}</span>
+        </div>
+        <div className={styles.tokenPopoverRow}>
+          <span>{t('usage.token_cached')}</span><span>{event.cached_tokens.toLocaleString()}</span>
+        </div>
+        <div className={`${styles.tokenPopoverRow} ${styles.tokenPopoverRowTotal}`}>
+          <span>{t('usage.token_total')}</span><span>{event.total_tokens.toLocaleString()}</span>
         </div>
       </div>
     </PortalPopover>
-  );
-}
-
-function TokenInlineButton({
-  item,
-}: {
-  item: TokenItem;
-}) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        ref={buttonRef}
-        type="button"
-        className={`${styles.tokenInlineItem} ${item.tone}`}
-        title={item.label}
-        aria-label={`${item.label}: ${item.value.toLocaleString()}`}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span className={styles.tokenInlineIcon}>{item.icon}</span>
-        <span className={styles.tokenInlineValue}>{item.value.toLocaleString()}</span>
-      </button>
-      {open ? (
-        <TokenHintPopover item={item} triggerRef={buttonRef} onClose={() => setOpen(false)} />
-      ) : null}
-    </>
-  );
-}
-
-function TokenCell({ event }: { event: UsageEvent }) {
-  const { t } = useTranslation();
-  const items: TokenItem[] = [
-    { icon: '↑', label: t('usage.token_prompt'), value: event.prompt_tokens, tone: styles.tokenIn },
-    { icon: '↓', label: t('usage.token_completion'), value: event.completion_tokens, tone: styles.tokenOut },
-    { icon: '◈', label: t('usage.token_reasoning'), value: event.reasoning_tokens, tone: styles.tokenReasoning },
-    { icon: '↻', label: t('usage.token_cached'), value: event.cached_tokens, tone: styles.tokenCached },
-    { icon: 'Σ', label: t('usage.token_total'), value: event.total_tokens, tone: styles.tokenTotal },
-  ];
-
-  return (
-    <div className={styles.tokenInlineGrid}>
-      {items.map((item) => (
-        <TokenInlineButton key={item.label} item={item} />
-      ))}
-    </div>
   );
 }
 
@@ -441,18 +457,24 @@ function formatTTFT(ms: number | undefined): string {
 /* ─────────── Event Row ─────────── */
 function EventRow({
   event,
+  tokenPopoverId,
   errorPopoverId,
+  onTokenClick,
   onErrorClick,
 }: {
   event: UsageEvent;
+  tokenPopoverId: number | null;
   errorPopoverId: number | null;
+  onTokenClick: (id: number) => void;
   onErrorClick: (id: number) => void;
 }) {
   const { t } = useTranslation();
+  const tokenBtnRef = useRef<HTMLButtonElement | null>(null);
   const errorBtnRef = useRef<HTMLButtonElement | null>(null);
   const date = new Date(event.started_at);
   const timeStr = date.toLocaleTimeString();
   const isSuccess = event.status === 'success';
+  const showTokenPopover = tokenPopoverId === event.id;
   const showErrorPopover = errorPopoverId === event.id;
 
   return (
@@ -473,7 +495,23 @@ function EventRow({
       <td className={styles.cellDuration}>{formatDuration(event.duration_ms)}</td>
       <td className={styles.cellDuration}>{formatTTFT(event.ttft_ms)}</td>
       <td className={styles.cellTokens}>
-        <TokenCell event={event} />
+        <span className={styles.cellTokensInner}>
+          {event.total_tokens.toLocaleString()}
+          <button
+            ref={tokenBtnRef}
+            type="button"
+            className={styles.tokenHelpBtn}
+            onClick={() => onTokenClick(event.id)}
+            title={t('usage.token_breakdown')}
+            aria-label={t('usage.token_breakdown')}
+            aria-expanded={showTokenPopover}
+          >
+            <IconInfo size={12} />
+          </button>
+        </span>
+        {showTokenPopover ? (
+          <TokenPopover event={event} triggerRef={tokenBtnRef} onClose={() => onTokenClick(event.id)} />
+        ) : null}
       </td>
       <td className={styles.cellReasoning}>{event.reasoning_effort || '-'}</td>
       <td className={styles.cellStatus}>
@@ -643,6 +681,7 @@ export function UsagePage() {
   const [loadKey, setLoadKey] = useState(0);
 
   /* ── Tooltip state ── */
+  const [tokenPopoverId, setTokenPopoverId] = useState<number | null>(null);
   const [errorPopoverId, setErrorPopoverId] = useState<number | null>(null);
 
   const dateRange = useMemo(() => {
@@ -947,7 +986,7 @@ export function UsagePage() {
           <div className={styles.loadingState}>
             <IconLoader2 size={20} />
           </div>
-        ) : events && events.events.length > 0 ? (
+        ) : events ? (
           <>
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -1049,65 +1088,79 @@ export function UsagePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {events.events.map((ev) => (
-                    <EventRow
-                      key={ev.id}
-                      event={ev}
-                      errorPopoverId={errorPopoverId}
-                      onErrorClick={(id) =>
-                        setErrorPopoverId(errorPopoverId === id ? null : id)
-                      }
-                    />
-                  ))}
+                  {events.events.length > 0 ? (
+                    events.events.map((ev) => (
+                      <EventRow
+                        key={ev.id}
+                        event={ev}
+                        tokenPopoverId={tokenPopoverId}
+                        errorPopoverId={errorPopoverId}
+                        onTokenClick={(id) =>
+                          setTokenPopoverId(tokenPopoverId === id ? null : id)
+                        }
+                        onErrorClick={(id) =>
+                          setErrorPopoverId(errorPopoverId === id ? null : id)
+                        }
+                      />
+                    ))
+                  ) : (
+                    <tr>
+                      <td className={styles.tableEmptyCell} colSpan={13}>
+                        {t('usage.no_events')}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
-            <div className={styles.pagination}>
-              <button
-                type="button"
-                className={styles.pageBtn}
-                disabled={page <= 0}
-                onClick={() => {
-                  const next = page - 1;
-                  setPage(next);
-                }}
-              >
-                {t('common.back')}
-              </button>
-              <span className={styles.pageInfo}>
-                {page + 1} / {Math.max(totalPages, 1)}
-              </span>
-              <button
-                type="button"
-                className={styles.pageBtn}
-                disabled={page >= totalPages - 1}
-                onClick={() => {
-                  const next = page + 1;
-                  setPage(next);
-                }}
-              >
-                {t('common.next')}
-              </button>
-              <span className={styles.pageJumpGroup}>
-                <input
-                  type="number"
-                  className={styles.pageJumpInput}
-                  value={pageJump}
-                  onChange={(e) => setPageJump(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handlePageJump(); }}
-                  min={1}
-                  max={totalPages}
-                  placeholder={t('usage.page_jump')}
-                />
+            {events.total > 0 ? (
+              <div className={styles.pagination}>
                 <button
                   type="button"
-                  className={styles.pageJumpBtn}
-                  onClick={handlePageJump}
+                  className={styles.pageBtn}
+                  disabled={page <= 0}
+                  onClick={() => {
+                    const next = page - 1;
+                    setPage(next);
+                  }}
                 >
-                  GO
+                  {t('common.back')}
                 </button>
-              </span>
-            </div>
+                <span className={styles.pageInfo}>
+                  {page + 1} / {Math.max(totalPages, 1)}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageBtn}
+                  disabled={page >= totalPages - 1}
+                  onClick={() => {
+                    const next = page + 1;
+                    setPage(next);
+                  }}
+                >
+                  {t('common.next')}
+                </button>
+                <span className={styles.pageJumpGroup}>
+                  <input
+                    type="number"
+                    className={styles.pageJumpInput}
+                    value={pageJump}
+                    onChange={(e) => setPageJump(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handlePageJump(); }}
+                    min={1}
+                    max={totalPages}
+                    placeholder={t('usage.page_jump')}
+                  />
+                  <button
+                    type="button"
+                    className={styles.pageJumpBtn}
+                    onClick={handlePageJump}
+                  >
+                    GO
+                  </button>
+                </span>
+              </div>
+            ) : null}
           </>
         ) : (
           <div className={styles.emptyState}>
