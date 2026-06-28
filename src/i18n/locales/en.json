@@ -720,6 +720,7 @@
     "title": "Usage Statistics",
     "total_requests": "Total Requests",
     "success_rate": "Success Rate",
+    "cache_hit_rate": "Cache Hit Rate",
     "total_tokens": "Total Tokens",
     "provider_breakdown": "Provider Breakdown",
     "recent_requests": "Recent Requests",

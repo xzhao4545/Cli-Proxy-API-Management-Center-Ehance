@@ -720,6 +720,7 @@
     "title": "使用统计",
     "total_requests": "总请求数",
     "success_rate": "成功率",
+    "cache_hit_rate": "缓存命中率",
     "total_tokens": "总 Token 数",
     "provider_breakdown": "提供商分布",
     "recent_requests": "最近请求",

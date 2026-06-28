@@ -785,10 +785,32 @@
   border-radius: $radius-md;
 }
 
+.providerBreakdownHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
 .providerBreakdownName {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.providerCacheHitRate {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--primary-color);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .providerBreakdownStatsRow {

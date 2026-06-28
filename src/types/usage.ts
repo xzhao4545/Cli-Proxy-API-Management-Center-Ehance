@@ -110,7 +110,10 @@ export interface ProviderMetric {
   successful_requests: number;
   failed_requests: number;
   tokens: number;
+  prompt_tokens: number;
+  cached_tokens: number;
   success_rate: number;
+  cache_hit_rate: number;
 }
 
 export interface ModelMetric {
@@ -127,6 +130,7 @@ export interface MetricsResponse {
   successful_requests: number;
   failed_requests: number;
   success_rate: number;
+  cache_hit_rate: number;
   total_prompt_tokens: number;
   total_completion_tokens: number;
   total_reasoning_tokens: number;

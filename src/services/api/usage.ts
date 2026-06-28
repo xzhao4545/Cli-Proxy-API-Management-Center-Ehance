@@ -5,6 +5,7 @@ import type {
   FailuresResponse,
   FiltersResponse,
   MetricsResponse,
+  ProviderMetric,
   UsageQueryParams,
   UsageSummaryParams,
 } from '@/types/usage';
@@ -22,6 +23,32 @@ const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? value as T[]
 const asNumber = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 
 const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+const normalizeCacheHitRate = (cacheHitRate: unknown, cachedTokens: number, promptTokens: number): number => {
+  const explicitRate = asNumber(cacheHitRate);
+  if (explicitRate > 0 || promptTokens <= 0) return explicitRate;
+  return cachedTokens / promptTokens;
+};
+
+const normalizeProviderMetric = (value: unknown): ProviderMetric => {
+  const data = asRecord(value);
+  const promptTokens = asNumber(data.prompt_tokens);
+  const cachedTokens = asNumber(data.cached_tokens);
+  return {
+    provider_key: asString(data.provider_key),
+    provider_label: asString(data.provider_label),
+    auth_id: asString(data.auth_id) || undefined,
+    auth_position: asString(data.auth_position) || undefined,
+    requests: asNumber(data.requests),
+    successful_requests: asNumber(data.successful_requests),
+    failed_requests: asNumber(data.failed_requests),
+    tokens: asNumber(data.tokens),
+    prompt_tokens: promptTokens,
+    cached_tokens: cachedTokens,
+    success_rate: asNumber(data.success_rate),
+    cache_hit_rate: normalizeCacheHitRate(data.cache_hit_rate, cachedTokens, promptTokens),
+  };
+};
 
 const normalizeEventsResponse = (payload: unknown): UsageEventsResponse => {
   const data = asRecord(payload);
@@ -68,6 +95,8 @@ const normalizeFiltersResponse = (payload: unknown): FiltersResponse => {
 
 const normalizeMetricsResponse = (payload: unknown): MetricsResponse => {
   const data = asRecord(payload);
+  const totalPromptTokens = asNumber(data.total_prompt_tokens);
+  const totalCachedTokens = asNumber(data.total_cached_tokens);
   return {
     window_from: asString(data.window_from),
     window_to: asString(data.window_to),
@@ -76,16 +105,17 @@ const normalizeMetricsResponse = (payload: unknown): MetricsResponse => {
     successful_requests: asNumber(data.successful_requests),
     failed_requests: asNumber(data.failed_requests),
     success_rate: asNumber(data.success_rate),
-    total_prompt_tokens: asNumber(data.total_prompt_tokens),
+    cache_hit_rate: normalizeCacheHitRate(data.cache_hit_rate, totalCachedTokens, totalPromptTokens),
+    total_prompt_tokens: totalPromptTokens,
     total_completion_tokens: asNumber(data.total_completion_tokens),
     total_reasoning_tokens: asNumber(data.total_reasoning_tokens),
-    total_cached_tokens: asNumber(data.total_cached_tokens),
+    total_cached_tokens: totalCachedTokens,
     total_tokens: asNumber(data.total_tokens),
     rpm: asNumber(data.rpm),
     tpm: asNumber(data.tpm),
-    provider_success_rates: asArray(data.provider_success_rates),
-    provider_request_totals: asArray(data.provider_request_totals),
-    provider_token_totals: asArray(data.provider_token_totals),
+    provider_success_rates: asArray(data.provider_success_rates).map(normalizeProviderMetric),
+    provider_request_totals: asArray(data.provider_request_totals).map(normalizeProviderMetric),
+    provider_token_totals: asArray(data.provider_token_totals).map(normalizeProviderMetric),
     model_request_totals: asArray(data.model_request_totals),
     model_token_totals: asArray(data.model_token_totals),
   };

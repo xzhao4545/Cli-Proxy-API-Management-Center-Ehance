@@ -717,6 +717,7 @@
     "title": "Статистика использования",
     "total_requests": "Всего запросов",
     "success_rate": "Успешность",
+    "cache_hit_rate": "Cache hit rate",
     "total_tokens": "Всего токенов",
     "provider_breakdown": "По провайдерам",
     "recent_requests": "Последние запросы",

@@ -746,6 +746,7 @@
     "title": "使用統計",
     "total_requests": "總請求數",
     "success_rate": "成功率",
+    "cache_hit_rate": "快取命中率",
     "total_tokens": "總 Token 數",
     "provider_breakdown": "供應商分佈",
     "recent_requests": "最近請求",

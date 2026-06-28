@@ -18,6 +18,7 @@ import type {
   UsageEvent,
   FilterOption,
   FiltersResponse,
+  ProviderMetric,
 } from '@/types/usage';
 import styles from './UsagePage.module.scss';
 
@@ -84,6 +85,11 @@ function formatLargeTokenCount(value: number): string {
   const scaled = value / unit.value;
   const formatted = scaled >= 100 ? scaled.toFixed(0) : scaled >= 10 ? scaled.toFixed(1) : scaled.toFixed(2);
   return `${formatted.replace(/\.0+$|(?<=\.\d)0+$/, '')}${unit.suffix}`;
+}
+
+function formatPercentage(rate: number, digits = 1): string {
+  if (!Number.isFinite(rate)) return '-';
+  return `${(rate * 100).toFixed(digits)}%`;
 }
 
 function formatErrorSummary(event: UsageEvent): string {
@@ -486,16 +492,21 @@ function EventRow({
 function ProviderBreakdownCard({
   provider,
 }: {
-  provider: { provider_key: string; provider_label: string; auth_position?: string; successful_requests: number; failed_requests: number; requests: number; tokens: number; success_rate: number };
+  provider: ProviderMetric;
 }) {
   const { t } = useTranslation();
   const total = provider.successful_requests + provider.failed_requests;
   const successPct = total > 0 ? (provider.success_rate * 100).toFixed(0) : '-';
   return (
     <div className={styles.providerBreakdownCard}>
-      <span className={styles.providerBreakdownName}>
-        {formatProviderDisplay(provider.provider_key, provider.provider_label, provider.auth_position)}
-      </span>
+      <div className={styles.providerBreakdownHeader}>
+        <span className={styles.providerBreakdownName}>
+          {formatProviderDisplay(provider.provider_key, provider.provider_label, provider.auth_position)}
+        </span>
+        <span className={styles.providerCacheHitRate}>
+          {t('usage.cache_hit_rate')}: {formatPercentage(provider.cache_hit_rate)}
+        </span>
+      </div>
       <div className={styles.providerBreakdownStatsRow}>
         <span className={`${styles.providerStatPill} ${styles.providerStatSuccess}`}>
           {t('stats.success')}: {provider.successful_requests}
@@ -873,13 +884,16 @@ export function UsagePage() {
         <MetricsCard
           label={t('usage.total_tokens')}
           value={metricsReady ? formatLargeTokenCount(metrics.total_tokens) : '-'}
-          sublabel={metricsReady && metrics.total_tokens > 0
-            ? `cache ${(metrics.total_cached_tokens / metrics.total_tokens * 100).toFixed(1)}%`
-            : undefined}
+          sublabel={metricsReady ? `${formatLargeTokenCount(metrics.total_cached_tokens)} ${t('usage.token_cached')}` : undefined}
+        />
+        <MetricsCard
+          label={t('usage.cache_hit_rate')}
+          value={metricsReady ? formatPercentage(metrics.cache_hit_rate) : '-'}
+          sublabel={metricsReady ? `${formatLargeTokenCount(metrics.total_cached_tokens)} / ${formatLargeTokenCount(metrics.total_prompt_tokens)}` : undefined}
         />
         <MetricsCard
           label={t('usage.success_rate')}
-          value={metricsReady ? `${(metrics.success_rate * 100).toFixed(1)}%` : '-'}
+          value={metricsReady ? formatPercentage(metrics.success_rate) : '-'}
           sublabel={
             metricsReady
               ? `${metrics.successful_requests} / ${metrics.failed_requests}`
