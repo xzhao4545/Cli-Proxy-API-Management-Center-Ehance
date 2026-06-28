@@ -378,7 +378,7 @@
 .thProvider { width: 150px; }
 .thModel { width: 150px; }
 .thDuration { width: 80px; }
-.thTokens { width: 90px; }
+.thTokens { width: 190px; }
 .thStatus { width: 90px; }
 .thAuth { width: 140px; }
 .thStream { width: 80px; }
@@ -455,58 +455,8 @@
 }
 
 .cellTokens {
-  position: relative;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
-}
-
-.cellTokensInner {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tokenHelpBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 50%;
-  background: var(--bg-secondary);
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 0;
-  transition: all $transition-fast;
-
-  &:hover {
-    background: var(--primary-color);
-    color: #fff;
-  }
-}
-
-/* ── Token popover ── */
-.tokenPopover {
-  min-width: 180px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: $radius-md;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  overflow: hidden;
-}
-
-.tokenPopoverHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
 }
 
 .tokenPopoverClose {
@@ -525,29 +475,65 @@
   }
 }
 
-.tokenPopoverBody {
-  padding: 6px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.tokenInlineGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(74px, 1fr));
+  gap: 3px 6px;
+  min-width: 176px;
 }
 
-.tokenPopoverRow {
-  display: flex;
+.tokenInlineItem {
+  display: inline-flex;
+  align-items: center;
   justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-primary);
-
-  span:last-child {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-  }
+  gap: 5px;
+  min-width: 0;
+  padding: 1px 6px;
+  border-radius: $radius-sm;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.45;
 }
 
-.tokenPopoverRowTotal {
-  border-top: 1px solid var(--border-color);
-  padding-top: 4px;
-  margin-top: 2px;
+.tokenInlineIcon {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tokenInlineValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tokenIn {
+  background: color-mix(in srgb, #2563eb 10%, transparent);
+  color: #2563eb;
+}
+
+.tokenOut {
+  background: rgba($success-color, 0.1);
+  color: $success-color;
+}
+
+.tokenReasoning {
+  background: color-mix(in srgb, #7c3aed 10%, transparent);
+  color: #7c3aed;
+}
+
+.tokenCached {
+  background: color-mix(in srgb, #0891b2 10%, transparent);
+  color: #0891b2;
+}
+
+.tokenTotal {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
 }
 
 /* ── Error cell & popover ── */
@@ -609,7 +595,6 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.tokenPopover,
 .errorPopover {
   cursor: default;
 }

@@ -8,7 +8,6 @@ import {
   IconLoader2,
   IconAlertTriangle,
   IconSettings,
-  IconInfo,
   IconX,
 } from '@/components/ui/icons';
 import { Select, type SelectOption } from '@/components/ui/Select';
@@ -215,44 +214,25 @@ function PortalPopover({
   );
 }
 
-/* ─────────── Token tooltip popover ─────────── */
-function TokenPopover({
-  event,
-  triggerRef,
-  onClose,
-}: {
-  event: UsageEvent;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
-  onClose: () => void;
-}) {
+function TokenCell({ event }: { event: UsageEvent }) {
   const { t } = useTranslation();
+  const items = [
+    { icon: '↑', label: t('usage.token_prompt'), value: event.prompt_tokens, tone: styles.tokenIn },
+    { icon: '↓', label: t('usage.token_completion'), value: event.completion_tokens, tone: styles.tokenOut },
+    { icon: '◈', label: t('usage.token_reasoning'), value: event.reasoning_tokens, tone: styles.tokenReasoning },
+    { icon: '↻', label: t('usage.token_cached'), value: event.cached_tokens, tone: styles.tokenCached },
+    { icon: 'Σ', label: t('usage.token_total'), value: event.total_tokens, tone: styles.tokenTotal },
+  ];
 
   return (
-    <PortalPopover triggerRef={triggerRef} onClose={onClose} className={styles.tokenPopover}>
-      <div className={styles.tokenPopoverHead}>
-        <span>{t('usage.token_breakdown')}</span>
-        <button type="button" className={styles.tokenPopoverClose} onClick={onClose}>
-          <IconX size={12} />
-        </button>
-      </div>
-      <div className={styles.tokenPopoverBody}>
-        <div className={styles.tokenPopoverRow}>
-          <span>{t('usage.token_prompt')}</span><span>{event.prompt_tokens.toLocaleString()}</span>
-        </div>
-        <div className={styles.tokenPopoverRow}>
-          <span>{t('usage.token_completion')}</span><span>{event.completion_tokens.toLocaleString()}</span>
-        </div>
-        <div className={styles.tokenPopoverRow}>
-          <span>{t('usage.token_reasoning')}</span><span>{event.reasoning_tokens.toLocaleString()}</span>
-        </div>
-        <div className={styles.tokenPopoverRow}>
-          <span>{t('usage.token_cached')}</span><span>{event.cached_tokens.toLocaleString()}</span>
-        </div>
-        <div className={`${styles.tokenPopoverRow} ${styles.tokenPopoverRowTotal}`}>
-          <span>{t('usage.token_total')}</span><span>{event.total_tokens.toLocaleString()}</span>
-        </div>
-      </div>
-    </PortalPopover>
+    <div className={styles.tokenInlineGrid}>
+      {items.map((item) => (
+        <span key={item.label} className={`${styles.tokenInlineItem} ${item.tone}`} title={item.label}>
+          <span className={styles.tokenInlineIcon}>{item.icon}</span>
+          <span className={styles.tokenInlineValue}>{item.value.toLocaleString()}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -404,24 +384,18 @@ function formatTTFT(ms: number | undefined): string {
 /* ─────────── Event Row ─────────── */
 function EventRow({
   event,
-  tokenPopoverId,
   errorPopoverId,
-  onTokenClick,
   onErrorClick,
 }: {
   event: UsageEvent;
-  tokenPopoverId: number | null;
   errorPopoverId: number | null;
-  onTokenClick: (id: number) => void;
   onErrorClick: (id: number) => void;
 }) {
   const { t } = useTranslation();
-  const tokenBtnRef = useRef<HTMLButtonElement | null>(null);
   const errorBtnRef = useRef<HTMLButtonElement | null>(null);
   const date = new Date(event.started_at);
   const timeStr = date.toLocaleTimeString();
   const isSuccess = event.status === 'success';
-  const showTokenPopover = tokenPopoverId === event.id;
   const showErrorPopover = errorPopoverId === event.id;
 
   return (
@@ -442,21 +416,7 @@ function EventRow({
       <td className={styles.cellDuration}>{formatDuration(event.duration_ms)}</td>
       <td className={styles.cellDuration}>{formatTTFT(event.ttft_ms)}</td>
       <td className={styles.cellTokens}>
-        <span className={styles.cellTokensInner}>
-          {event.total_tokens.toLocaleString()}
-          <button
-            ref={tokenBtnRef}
-            type="button"
-            className={styles.tokenHelpBtn}
-            onClick={() => onTokenClick(event.id)}
-            title="Token breakdown"
-          >
-            <IconInfo size={12} />
-          </button>
-        </span>
-        {showTokenPopover ? (
-          <TokenPopover event={event} triggerRef={tokenBtnRef} onClose={() => onTokenClick(event.id)} />
-        ) : null}
+        <TokenCell event={event} />
       </td>
       <td className={styles.cellReasoning}>{event.reasoning_effort || '-'}</td>
       <td className={styles.cellStatus}>
@@ -626,7 +586,6 @@ export function UsagePage() {
   const [loadKey, setLoadKey] = useState(0);
 
   /* ── Tooltip state ── */
-  const [tokenPopoverId, setTokenPopoverId] = useState<number | null>(null);
   const [errorPopoverId, setErrorPopoverId] = useState<number | null>(null);
 
   const dateRange = useMemo(() => {
@@ -1037,11 +996,7 @@ export function UsagePage() {
                     <EventRow
                       key={ev.id}
                       event={ev}
-                      tokenPopoverId={tokenPopoverId}
                       errorPopoverId={errorPopoverId}
-                      onTokenClick={(id) =>
-                        setTokenPopoverId(tokenPopoverId === id ? null : id)
-                      }
                       onErrorClick={(id) =>
                         setErrorPopoverId(errorPopoverId === id ? null : id)
                       }
