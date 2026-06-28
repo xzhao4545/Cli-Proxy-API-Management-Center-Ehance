@@ -186,11 +186,14 @@ function PortalPopover({
 
   useEffect(() => {
     const handler = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      if (ref.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      onClose();
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
-  }, [onClose]);
+  }, [onClose, triggerRef]);
 
   useEffect(() => {
     if (!triggerRef.current) return;
