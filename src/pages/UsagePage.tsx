@@ -905,7 +905,7 @@ export function UsagePage() {
         <MetricsCard
           label={t('usage.cache_hit_rate')}
           value={metricsReady ? formatPercentage(metrics.cache_hit_rate) : '-'}
-          sublabel={metricsReady ? `${formatLargeTokenCount(metrics.total_cached_tokens)} / ${formatLargeTokenCount(metrics.total_prompt_tokens)}` : undefined}
+          sublabel={metricsReady ? `${formatLargeTokenCount(metrics.total_cache_read_tokens)} / ${formatLargeTokenCount(metrics.total_prompt_tokens)}` : undefined}
         />
         <MetricsCard
           label={t('usage.success_rate')}

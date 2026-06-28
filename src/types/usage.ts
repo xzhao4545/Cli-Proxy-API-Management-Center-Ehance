@@ -112,6 +112,8 @@ export interface ProviderMetric {
   tokens: number;
   prompt_tokens: number;
   cached_tokens: number;
+  cache_read_tokens: number;
+  cache_creation_tokens: number;
   success_rate: number;
   cache_hit_rate: number;
 }
@@ -135,6 +137,8 @@ export interface MetricsResponse {
   total_completion_tokens: number;
   total_reasoning_tokens: number;
   total_cached_tokens: number;
+  total_cache_read_tokens: number;
+  total_cache_creation_tokens: number;
   total_tokens: number;
   rpm: number;
   tpm: number;
