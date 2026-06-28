@@ -55,10 +55,14 @@ const normalizeFiltersResponse = (payload: unknown): FiltersResponse => {
     provider_labels: asArray(data.provider_labels),
     models: asArray(data.models),
     client_models: asArray(data.client_models),
+    response_models: asArray(data.response_models),
     auth_labels: asArray(data.auth_labels),
+    auth_types: asArray(data.auth_types),
+    auth_categories: asArray(data.auth_categories),
     statuses: asArray(data.statuses),
     error_stages: asArray(data.error_stages),
     error_codes: asArray(data.error_codes),
+    reasoning_efforts: asArray(data.reasoning_efforts),
   };
 };
 

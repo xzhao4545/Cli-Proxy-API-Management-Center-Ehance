@@ -10,9 +10,13 @@ export interface UsageEvent {
   auth_label?: string;
   auth_index?: string;
   auth_position?: string;
+  auth_type?: string;
+  auth_category?: string;
   model: string;
   client_model?: string;
+  response_model?: string;
   route?: string;
+  stream?: boolean;
   status: string;
   http_status?: number;
   upstream_status?: number;
@@ -20,7 +24,9 @@ export interface UsageEvent {
   completion_tokens: number;
   total_tokens: number;
   reasoning_tokens: number;
+  reasoning_effort?: string;
   cached_tokens: number;
+  ttft_ms?: number;
   client_key_hash?: string;
   error_stage?: string;
   error_code?: string;
@@ -85,10 +91,14 @@ export interface FiltersResponse {
   provider_labels: string[];
   models: string[];
   client_models: string[];
+  response_models: string[];
   auth_labels: string[];
+  auth_types: string[];
+  auth_categories: string[];
   statuses: string[];
   error_stages: string[];
   error_codes: string[];
+  reasoning_efforts: string[];
 }
 
 export interface ProviderMetric {
@@ -136,11 +146,16 @@ export interface UsageQueryParams {
   provider_label?: string;
   model?: string;
   client_model?: string;
+  response_model?: string;
   status?: string;
   error_stage?: string;
   error_code?: string;
   auth_id?: string;
   auth_label?: string;
+  auth_type?: string;
+  auth_category?: string;
+  stream?: string;
+  reasoning_effort?: string;
   client_key_hash?: string;
   date_from?: string;
   date_to?: string;

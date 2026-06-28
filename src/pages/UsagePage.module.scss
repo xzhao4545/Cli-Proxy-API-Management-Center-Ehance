@@ -311,11 +311,6 @@
   min-width: 96px;
 }
 
-.providerFilterSelect {
-  min-width: 180px;
-  max-width: 260px;
-}
-
 /* ── Table ── */
 .tableWrap {
   overflow-x: auto;
@@ -325,6 +320,7 @@
 
 .table {
   width: 100%;
+  min-width: 1550px;
   border-collapse: collapse;
   font-size: 13px;
 
@@ -357,13 +353,37 @@
   }
 }
 
+.thContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.thLabel {
+  white-space: nowrap;
+}
+
+.thFilter {
+  min-width: 80px;
+  max-width: 160px;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.thFilterActive {
+  border-color: var(--primary-color);
+}
+
 .thTime { width: 70px; }
-.thProvider { width: 130px; }
-.thModel { width: 140px; }
-.thDuration { width: 70px; }
-.thTokens { width: 80px; }
-.thStatus { width: 70px; }
-.thError { }
+.thProvider { width: 150px; }
+.thModel { width: 150px; }
+.thDuration { width: 80px; }
+.thTokens { width: 90px; }
+.thStatus { width: 90px; }
+.thAuth { width: 140px; }
+.thStream { width: 80px; }
+.thReasoning { width: 110px; }
+.thError { min-width: 200px; }
 
 .cellTime {
   white-space: nowrap;
@@ -374,7 +394,7 @@
 .cellProvider {
   font-weight: 500;
   font-size: 12px;
-  max-width: 130px;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -383,10 +403,49 @@
 .cellModel {
   font-family: $font-mono;
   font-size: 11px;
-  max-width: 140px;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cellAuth {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cellStream {
+  white-space: nowrap;
+}
+
+.badgeStream {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: $radius-sm;
+  font-size: 10px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  color: var(--primary-color);
+}
+
+.badgeSync {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: $radius-sm;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+.cellReasoning {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--text-secondary);
 }
 
 .cellDuration {

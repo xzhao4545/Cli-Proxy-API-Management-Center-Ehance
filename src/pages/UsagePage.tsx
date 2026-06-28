@@ -358,6 +358,43 @@ function DateTimeInput({
   );
 }
 
+/* ─────────── Filterable table header ─────────── */
+function FilterableTh({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <th className={className}>
+      <div className={styles.thContent}>
+        <span className={styles.thLabel}>{label}</span>
+        {children}
+      </div>
+    </th>
+  );
+}
+
+function thSelectClass(active: boolean): string {
+  return `${styles.thFilter} ${active ? styles.thFilterActive : ''}`.trim();
+}
+
+function buildStringOptions(values: string[], allLabel: string): SelectOption[] {
+  return [
+    { value: '', label: allLabel },
+    ...values.filter((v) => v.trim() !== '').map((v) => ({ value: v, label: v })),
+  ];
+}
+
+function formatTTFT(ms: number | undefined): string {
+  if (!ms || ms <= 0) return '-';
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
 /* ─────────── Event Row ─────────── */
 function EventRow({
   event,
@@ -388,7 +425,16 @@ function EventRow({
         {formatProviderDisplay(event.provider_key, event.provider_label, event.auth_position)}
       </td>
       <td className={styles.cellModel}>{event.model}</td>
+      <td className={styles.cellModel}>{event.client_model || '-'}</td>
+      <td className={styles.cellModel}>{event.response_model || '-'}</td>
+      <td className={styles.cellAuth}>{event.auth_category || event.auth_type || '-'}</td>
+      <td className={styles.cellStream}>
+        <span className={event.stream ? styles.badgeStream : styles.badgeSync}>
+          {event.stream ? t('usage.stream_yes') : t('usage.stream_no')}
+        </span>
+      </td>
       <td className={styles.cellDuration}>{formatDuration(event.duration_ms)}</td>
+      <td className={styles.cellDuration}>{formatTTFT(event.ttft_ms)}</td>
       <td className={styles.cellTokens}>
         <span className={styles.cellTokensInner}>
           {event.total_tokens.toLocaleString()}
@@ -406,6 +452,7 @@ function EventRow({
           <TokenPopover event={event} triggerRef={tokenBtnRef} onClose={() => onTokenClick(event.id)} />
         ) : null}
       </td>
+      <td className={styles.cellReasoning}>{event.reasoning_effort || '-'}</td>
       <td className={styles.cellStatus}>
         <span className={isSuccess ? styles.badgeSuccess : styles.badgeFailure}>
           {isSuccess ? t('common.success') : t('common.failure')}
@@ -490,7 +537,14 @@ export function UsagePage() {
   /* ── Filters ── */
   const [providerFilter, setProviderFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [modelFilter, setModelFilter] = useState<string>('');
+  const [clientModelFilter, setClientModelFilter] = useState<string>('');
+  const [responseModelFilter, setResponseModelFilter] = useState<string>('');
+  const [authCategoryFilter, setAuthCategoryFilter] = useState<string>('');
+  const [streamFilter, setStreamFilter] = useState<string>('');
+  const [reasoningEffortFilter, setReasoningEffortFilter] = useState<string>('');
   const [providerOptions, setProviderOptions] = useState<FilterOption[]>([]);
+  const [filterOptions, setFilterOptions] = useState<FiltersResponse | null>(null);
   const providerFilterKey = useMemo(() => {
     const parts = providerFilter.split('|');
     return parts[0] || '';
@@ -514,6 +568,31 @@ export function UsagePage() {
       return { value: compound, label: display };
     }),
   ], [providerOptions, t]);
+  const modelSelectOptions = useMemo<SelectOption[]>(
+    () => buildStringOptions(filterOptions?.models || [], t('usage.filter_all')),
+    [filterOptions, t],
+  );
+  const clientModelSelectOptions = useMemo<SelectOption[]>(
+    () => buildStringOptions(filterOptions?.client_models || [], t('usage.filter_all')),
+    [filterOptions, t],
+  );
+  const responseModelSelectOptions = useMemo<SelectOption[]>(
+    () => buildStringOptions(filterOptions?.response_models || [], t('usage.filter_all')),
+    [filterOptions, t],
+  );
+  const authCategorySelectOptions = useMemo<SelectOption[]>(
+    () => buildStringOptions(filterOptions?.auth_categories || [], t('usage.filter_all')),
+    [filterOptions, t],
+  );
+  const reasoningEffortSelectOptions = useMemo<SelectOption[]>(
+    () => buildStringOptions(filterOptions?.reasoning_efforts || [], t('usage.filter_all')),
+    [filterOptions, t],
+  );
+  const streamSelectOptions = useMemo<SelectOption[]>(() => [
+    { value: '', label: t('usage.filter_all') },
+    { value: 'streaming', label: t('usage.stream_yes') },
+    { value: 'sync', label: t('usage.stream_no') },
+  ], [t]);
   const pageSizeOptions = useMemo<SelectOption[]>(() =>
     PAGE_SIZE_OPTIONS.map((size) => ({ value: String(size), label: String(size) })),
   []);
@@ -561,6 +640,12 @@ export function UsagePage() {
     if (providerFilterLabel) params.provider_label = providerFilterLabel;
     if (providerFilterAuthId) params.auth_id = providerFilterAuthId;
     if (statusFilter) params.status = statusFilter;
+    if (modelFilter) params.model = modelFilter;
+    if (clientModelFilter) params.client_model = clientModelFilter;
+    if (responseModelFilter) params.response_model = responseModelFilter;
+    if (authCategoryFilter) params.auth_category = authCategoryFilter;
+    if (streamFilter) params.stream = streamFilter;
+    if (reasoningEffortFilter) params.reasoning_effort = reasoningEffortFilter;
 
     const loadUsageData = async () => {
       setLoading(true);
@@ -592,13 +677,14 @@ export function UsagePage() {
     return () => {
       cancelled = true;
     };
-  }, [connected, loadKey, dateRange, providerFilterKey, providerFilterLabel, providerFilterAuthId, statusFilter, pageSize, page]);
+  }, [connected, loadKey, dateRange, providerFilterKey, providerFilterLabel, providerFilterAuthId, statusFilter, modelFilter, clientModelFilter, responseModelFilter, authCategoryFilter, streamFilter, reasoningEffortFilter, pageSize, page]);
 
   /* ── Load filters on mount ── */
   useEffect(() => {
     if (!connected) return;
     usageApi.getFilters().then((data: FiltersResponse) => {
       setProviderOptions(data.providers || []);
+      setFilterOptions(data);
     }).catch(() => {});
   }, [connected]);
 
@@ -638,6 +724,36 @@ export function UsagePage() {
 
   const handleStatusFilter = useCallback((status: string) => {
     setStatusFilter(status);
+    setPage(0);
+  }, []);
+
+  const handleModelFilter = useCallback((value: string) => {
+    setModelFilter(value);
+    setPage(0);
+  }, []);
+
+  const handleClientModelFilter = useCallback((value: string) => {
+    setClientModelFilter(value);
+    setPage(0);
+  }, []);
+
+  const handleResponseModelFilter = useCallback((value: string) => {
+    setResponseModelFilter(value);
+    setPage(0);
+  }, []);
+
+  const handleAuthCategoryFilter = useCallback((value: string) => {
+    setAuthCategoryFilter(value);
+    setPage(0);
+  }, []);
+
+  const handleStreamFilter = useCallback((value: string) => {
+    setStreamFilter(value);
+    setPage(0);
+  }, []);
+
+  const handleReasoningEffortFilter = useCallback((value: string) => {
+    setReasoningEffortFilter(value);
     setPage(0);
   }, []);
 
@@ -714,15 +830,6 @@ export function UsagePage() {
           </div>
         </div>
         <div className={styles.toolbarRight}>
-          <Select
-            className={`${styles.filterSelect} ${styles.providerFilterSelect}`}
-            value={providerFilter}
-            options={providerSelectOptions}
-            onChange={handleProviderFilter}
-            ariaLabel={t('usage.provider')}
-            fullWidth={false}
-            size="sm"
-          />
           <button
             type="button"
             className={styles.refreshBtn}
@@ -803,15 +910,6 @@ export function UsagePage() {
               fullWidth={false}
               size="sm"
             />
-            <Select
-              className={styles.filterSelect}
-              value={statusFilter}
-              options={statusOptions}
-              onChange={handleStatusFilter}
-              ariaLabel={t('usage.status')}
-              fullWidth={false}
-              size="sm"
-            />
           </div>
         </div>
 
@@ -825,13 +923,99 @@ export function UsagePage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th className={styles.thTime}>{t('usage.time')}</th>
-                    <th className={styles.thProvider}>{t('usage.provider')}</th>
-                    <th className={styles.thModel}>{t('usage.model')}</th>
-                    <th className={styles.thDuration}>{t('usage.duration')}</th>
-                    <th className={styles.thTokens}>{t('usage.tokens')}</th>
-                    <th className={styles.thStatus}>{t('usage.status')}</th>
-                    <th className={styles.thError}>{t('usage.error')}</th>
+                    <FilterableTh label={t('usage.time')} className={styles.thTime} />
+                    <FilterableTh label={t('usage.provider')} className={styles.thProvider}>
+                      <Select
+                        className={thSelectClass(providerFilter !== '')}
+                        value={providerFilter}
+                        options={providerSelectOptions}
+                        onChange={handleProviderFilter}
+                        ariaLabel={t('usage.provider')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.model')} className={styles.thModel}>
+                      <Select
+                        className={thSelectClass(modelFilter !== '')}
+                        value={modelFilter}
+                        options={modelSelectOptions}
+                        onChange={handleModelFilter}
+                        ariaLabel={t('usage.model')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.client_model')} className={styles.thModel}>
+                      <Select
+                        className={thSelectClass(clientModelFilter !== '')}
+                        value={clientModelFilter}
+                        options={clientModelSelectOptions}
+                        onChange={handleClientModelFilter}
+                        ariaLabel={t('usage.client_model')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.response_model')} className={styles.thModel}>
+                      <Select
+                        className={thSelectClass(responseModelFilter !== '')}
+                        value={responseModelFilter}
+                        options={responseModelSelectOptions}
+                        onChange={handleResponseModelFilter}
+                        ariaLabel={t('usage.response_model')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.auth_type')} className={styles.thAuth}>
+                      <Select
+                        className={thSelectClass(authCategoryFilter !== '')}
+                        value={authCategoryFilter}
+                        options={authCategorySelectOptions}
+                        onChange={handleAuthCategoryFilter}
+                        ariaLabel={t('usage.auth_type')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.stream')} className={styles.thStream}>
+                      <Select
+                        className={thSelectClass(streamFilter !== '')}
+                        value={streamFilter}
+                        options={streamSelectOptions}
+                        onChange={handleStreamFilter}
+                        ariaLabel={t('usage.stream')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.duration')} className={styles.thDuration} />
+                    <FilterableTh label={t('usage.ttft')} className={styles.thDuration} />
+                    <FilterableTh label={t('usage.tokens')} className={styles.thTokens} />
+                    <FilterableTh label={t('usage.reasoning_effort')} className={styles.thReasoning}>
+                      <Select
+                        className={thSelectClass(reasoningEffortFilter !== '')}
+                        value={reasoningEffortFilter}
+                        options={reasoningEffortSelectOptions}
+                        onChange={handleReasoningEffortFilter}
+                        ariaLabel={t('usage.reasoning_effort')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.status')} className={styles.thStatus}>
+                      <Select
+                        className={thSelectClass(statusFilter !== '')}
+                        value={statusFilter}
+                        options={statusOptions}
+                        onChange={handleStatusFilter}
+                        ariaLabel={t('usage.status')}
+                        fullWidth
+                        size="sm"
+                      />
+                    </FilterableTh>
+                    <FilterableTh label={t('usage.error')} className={styles.thError} />
                   </tr>
                 </thead>
                 <tbody>

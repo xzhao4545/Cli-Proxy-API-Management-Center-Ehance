@@ -743,6 +743,16 @@
     "error_http": "HTTP",
     "error_upstream": "Вышестоящий",
     "custom_range": "Свой диапазон",
+    "response_model": "Модель ответа",
+    "client_model": "Клиентская модель",
+    "auth_type": "Тип аутентификации",
+    "auth_category": "Категория аутентификации",
+    "stream": "Поток",
+    "stream_yes": "Поток",
+    "stream_no": "Синхр.",
+    "reasoning_effort": "Интенс. рассужд.",
+    "ttft": "TTFT",
+    "ttft_ms": "мс",
     "page_jump": "Страница"
   },
   "stats": {

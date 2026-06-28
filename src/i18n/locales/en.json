@@ -748,6 +748,16 @@
     "custom_range": "Custom Range",
     "range_from": "Start Time",
     "range_to": "End Time",
+    "response_model": "Response Model",
+    "client_model": "Client Model",
+    "auth_type": "Auth Type",
+    "auth_category": "Auth Category",
+    "stream": "Stream",
+    "stream_yes": "Stream",
+    "stream_no": "Sync",
+    "reasoning_effort": "Reasoning",
+    "ttft": "TTFT",
+    "ttft_ms": "ms",
     "page_jump": "Page"
   },
   "stats": {

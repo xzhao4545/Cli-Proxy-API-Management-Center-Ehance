@@ -772,6 +772,16 @@
     "error_http": "HTTP",
     "error_upstream": "上游",
     "custom_range": "選擇範圍",
+    "response_model": "回應模型",
+    "client_model": "客戶端模型",
+    "auth_type": "認證類型",
+    "auth_category": "認證分類",
+    "stream": "串流",
+    "stream_yes": "串流",
+    "stream_no": "同步",
+    "reasoning_effort": "推理強度",
+    "ttft": "首Token",
+    "ttft_ms": "毫秒",
     "page_jump": "跳頁"
   },
   "stats": {

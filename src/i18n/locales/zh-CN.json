@@ -748,6 +748,16 @@
     "custom_range": "选择范围",
     "range_from": "开始时间",
     "range_to": "结束时间",
+    "response_model": "响应模型",
+    "client_model": "客户端模型",
+    "auth_type": "认证类型",
+    "auth_category": "认证分类",
+    "stream": "流式",
+    "stream_yes": "流式",
+    "stream_no": "同步",
+    "reasoning_effort": "推理强度",
+    "ttft": "首Token",
+    "ttft_ms": "毫秒",
     "page_jump": "跳页"
   },
   "stats": {
