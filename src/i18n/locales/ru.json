@@ -120,7 +120,8 @@
     "quota_management": "Управление квотами",
     "config_management": "Панель конфигурации",
     "logs": "Журнал",
-    "system_info": "Информация о центре"
+    "system_info": "Информация о центре",
+    "codex_retry_filter": "Фильтр Codex"
   },
   "nav_groups": {
     "operate": "Работа",
@@ -137,7 +138,8 @@
     "quota_management": "API-ключи и лимиты",
     "logs": "Отслеживание запросов",
     "config_management": "Конфигурация шлюза",
-    "system_info": "Диагностика"
+    "system_info": "Диагностика",
+    "codex_retry_filter": "Повторы Responses"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -1443,6 +1445,68 @@
     },
     "modelCatalog": {
       "notLoaded": "Не загружено"
+    }
+  },
+  "codex_retry_filter": {
+    "title": "Фильтр повторов Codex",
+    "subtitle": "Настройка повторов по reasoning tokens и статистики попаданий для OpenAI Responses.",
+    "config_title": "Конфигурация фильтра",
+    "matching_title": "Модели и условия",
+    "enabled": "Включено",
+    "disabled": "Отключено",
+    "enable_filter": "Включить фильтр",
+    "protocol_scope": "Применяется только к трафику Codex executor openai-response.",
+    "intercept_streaming": "Перехватывать потоковые ответы",
+    "intercept_streaming_desc": "Отбрасывать совпавшие буферизованные потоки и повторять запрос.",
+    "intercept_non_streaming": "Перехватывать обычные ответы",
+    "intercept_non_streaming_desc": "Повторять на сервере вместо возврата совпавшего ответа.",
+    "guard_retry_attempts": "Внутренние повторы правила",
+    "models": "Шаблоны моделей",
+    "reasoning_lengths": "Длины reasoning tokens",
+    "streaming_warning": "При включении подходящие потоковые Responses запросы буферизуются до response.completed.",
+    "save_success": "Конфигурация фильтра Codex сохранена",
+    "remove_item": "Удалить {{value}}",
+    "recent_hits": "Недавние попадания",
+    "by_model": "По модели",
+    "by_auth": "По авторизации",
+    "by_reasoning_tokens": "По reasoning tokens",
+    "by_action": "По действию",
+    "no_data": "Нет данных",
+    "no_hits": "Нет записей",
+    "metrics": {
+      "attempts": "Проверки",
+      "hits": "Попадания",
+      "hit_rate": "Доля попаданий",
+      "retry_success_rate": "Успешность повторов",
+      "final_successes": "итоговых успехов",
+      "internal_retries": "Внутренние повторы",
+      "conductor_retries": "Повторы conductor",
+      "observe_only_hits": "Только наблюдение"
+    },
+    "table": {
+      "key": "Ключ",
+      "time": "Время",
+      "model": "Модель",
+      "client_model": "Модель клиента",
+      "auth": "Авторизация",
+      "stream": "Поток",
+      "reasoning_tokens": "Reasoning tokens",
+      "action": "Действие",
+      "remaining": "Осталось",
+      "attempt": "Попытка",
+      "final_success": "Итоговый успех"
+    },
+    "actions": {
+      "pass": "Пропуск",
+      "observe_only": "Наблюдение",
+      "internal_retry": "Внутренний повтор",
+      "conductor_retry": "Повтор conductor"
+    },
+    "validation": {
+      "models_required": "Нужен хотя бы один шаблон модели.",
+      "lengths_required": "Нужна хотя бы одна длина попадания.",
+      "guard_retry_invalid": "Внутренние повторы должны быть неотрицательным целым числом.",
+      "intercept_required": "При включенном фильтре нельзя отключить оба типа перехвата."
     }
   }
 }
