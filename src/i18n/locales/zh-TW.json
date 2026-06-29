@@ -1518,6 +1518,7 @@
       "model": "模型",
       "client_model": "客戶端模型",
       "auth": "認證",
+      "auth_label": "標籤",
       "stream": "串流",
       "reasoning_tokens": "Reasoning tokens",
       "action": "動作",

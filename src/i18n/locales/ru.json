@@ -1489,6 +1489,7 @@
       "model": "Модель",
       "client_model": "Модель клиента",
       "auth": "Авторизация",
+      "auth_label": "Метка",
       "stream": "Поток",
       "reasoning_tokens": "Reasoning tokens",
       "action": "Действие",

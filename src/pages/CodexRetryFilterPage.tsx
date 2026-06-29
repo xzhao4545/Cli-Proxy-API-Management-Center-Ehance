@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createPortal } from 'react-dom';
 import { codexRetryFilterApi } from '@/services/api';
 import { useAuthStore, useNotificationStore } from '@/stores';
 import {
   IconAlertTriangle,
   IconCheck,
+  IconInfo,
   IconLoader2,
   IconPlus,
   IconRefreshCw,
@@ -29,6 +31,32 @@ const DEFAULT_CONFIG: CodexRetryFilterConfig = {
 };
 
 const PAGE_SIZE = 50;
+type DatePreset = '1h' | '6h' | '24h' | '7d' | '30d';
+
+const PRESETS: DatePreset[] = ['1h', '6h', '24h', '7d', '30d'];
+
+const PRESET_LABELS: Record<DatePreset, string> = {
+  '1h': '1h',
+  '6h': '6h',
+  '24h': '24h',
+  '7d': '7d',
+  '30d': '30d',
+};
+
+function formatDateInput(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
+function parseDateInput(value: string): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 function formatPercentage(value: number, digits = 1): string {
   if (!Number.isFinite(value)) return '-';
@@ -176,6 +204,54 @@ function MetricCard({ label, value, hint }: { label: string; value: string; hint
   );
 }
 
+function DateTimeInput({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input || disabled) return;
+    input.focus();
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+    input.click();
+  };
+
+  return (
+    <div className={styles.dateInputWrap}>
+      <span>{label}</span>
+      <div className={styles.dateInputShell}>
+        <input
+          ref={inputRef}
+          type="datetime-local"
+          className={styles.dateInput}
+          value={value}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          className={styles.datePickerBtn}
+          onClick={openPicker}
+          disabled={disabled}
+          aria-label={label}
+        />
+      </div>
+    </div>
+  );
+}
+
 function actionLabel(t: (key: string, options?: Record<string, string>) => string, action: CodexRetryFilterAction) {
   return t(`codex_retry_filter.actions.${action}`, { defaultValue: action || '-' });
 }
@@ -183,9 +259,11 @@ function actionLabel(t: (key: string, options?: Record<string, string>) => strin
 function BreakdownTable({
   title,
   rows,
+  keyLabel,
 }: {
   title: string;
   rows: CodexRetryFilterBreakdown[];
+  keyLabel?: string;
 }) {
   const { t } = useTranslation();
   return (
@@ -197,7 +275,7 @@ function BreakdownTable({
         <table className={styles.compactTable}>
           <thead>
             <tr>
-              <th>{t('codex_retry_filter.table.key')}</th>
+              <th>{keyLabel ?? t('codex_retry_filter.table.key')}</th>
               <th>{t('codex_retry_filter.metrics.attempts')}</th>
               <th>{t('codex_retry_filter.metrics.hits')}</th>
               <th>{t('codex_retry_filter.metrics.hit_rate')}</th>
@@ -287,6 +365,7 @@ export function CodexRetryFilterPage() {
   const { showNotification } = useNotificationStore();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const connected = connectionStatus === 'connected';
+  const floatingActionsRef = useRef<HTMLDivElement>(null);
   const [config, setConfig] = useState<CodexRetryFilterConfig>(DEFAULT_CONFIG);
   const [savedConfig, setSavedConfig] = useState<CodexRetryFilterConfig>(DEFAULT_CONFIG);
   const [stats, setStats] = useState<CodexRetryFilterStats | null>(null);
@@ -294,7 +373,16 @@ export function CodexRetryFilterPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [loadKey, setLoadKey] = useState(0);
+  const [preset, setPreset] = useState<DatePreset | null>('24h');
+  const [customMode, setCustomMode] = useState(false);
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return formatDateInput(d);
+  });
+  const [dateTo, setDateTo] = useState('');
 
   const validationErrors = useMemo(() => {
     const errors: string[] = [];
@@ -314,6 +402,14 @@ export function CodexRetryFilterPage() {
   }, [config, t]);
 
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
+  const dateRange = useMemo(() => {
+    const from = parseDateInput(dateFrom);
+    const to = parseDateInput(dateTo);
+    return {
+      from: from ? from.toISOString() : undefined,
+      to: customMode && to ? to.toISOString() : undefined,
+    };
+  }, [customMode, dateFrom, dateTo]);
 
   const loadData = useCallback(async () => {
     if (!connected) {
@@ -322,22 +418,42 @@ export function CodexRetryFilterPage() {
     }
     setLoading(true);
     setError(null);
+    setMetricsError(null);
     try {
-      const [nextConfig, nextStats, nextHits] = await Promise.all([
-        codexRetryFilterApi.getConfig(),
-        codexRetryFilterApi.getStats(),
-        codexRetryFilterApi.getHits({ limit: PAGE_SIZE }),
-      ]);
+      const nextConfig = await codexRetryFilterApi.getConfig();
       setConfig(nextConfig);
       setSavedConfig(nextConfig);
-      setStats(nextStats);
-      setHits(nextHits.hits);
+
+      const queryParams = {
+        from: dateRange.from,
+        to: dateRange.to,
+      };
+      const [statsResult, hitsResult] = await Promise.allSettled([
+        codexRetryFilterApi.getStats(queryParams),
+        codexRetryFilterApi.getHits({ ...queryParams, limit: PAGE_SIZE }),
+      ]);
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
+      } else {
+        setStats(null);
+      }
+      if (hitsResult.status === 'fulfilled') {
+        setHits(hitsResult.value.hits);
+      } else {
+        setHits([]);
+      }
+      const metricErrors = [statsResult, hitsResult]
+        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+        .map((result) => (result.reason instanceof Error ? result.reason.message : String(result.reason)));
+      if (metricErrors.length > 0) {
+        setMetricsError(Array.from(new Set(metricErrors)).join('; '));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, [connected]);
+  }, [connected, dateRange]);
 
   useEffect(() => {
     void loadData();
@@ -373,29 +489,139 @@ export function CodexRetryFilterPage() {
     setLoadKey((key) => key + 1);
   }, []);
 
+  const handlePresetChange = useCallback((newPreset: DatePreset) => {
+    setPreset(newPreset);
+    setCustomMode(false);
+    const now = new Date();
+    const from = new Date(now);
+    switch (newPreset) {
+      case '1h': from.setHours(from.getHours() - 1); break;
+      case '6h': from.setHours(from.getHours() - 6); break;
+      case '24h': from.setDate(from.getDate() - 1); break;
+      case '7d': from.setDate(from.getDate() - 7); break;
+      case '30d': from.setDate(from.getDate() - 30); break;
+    }
+    setDateFrom(formatDateInput(from));
+    setDateTo('');
+  }, []);
+
+  const handleCustomToggle = useCallback(() => {
+    setCustomMode(true);
+    setPreset(null);
+  }, []);
+
+  const handleDateFromChange = useCallback((value: string) => {
+    setDateFrom(value);
+    setCustomMode(true);
+    setPreset(null);
+  }, []);
+
+  const handleDateToChange = useCallback((value: string) => {
+    setDateTo(value);
+    setCustomMode(true);
+    setPreset(null);
+  }, []);
+
   const metricsReady = stats && !loading;
+  const showFloatingSave = dirty;
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || !showFloatingSave) return;
+
+    const actionsEl = floatingActionsRef.current;
+    if (!actionsEl) return;
+
+    const updatePadding = () => {
+      const height = actionsEl.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--codex-retry-filter-action-bar-height', `${height}px`);
+    };
+
+    updatePadding();
+    window.addEventListener('resize', updatePadding);
+
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updatePadding);
+    ro?.observe(actionsEl);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', updatePadding);
+      document.documentElement.style.removeProperty('--codex-retry-filter-action-bar-height');
+    };
+  }, [showFloatingSave]);
+
+  const floatingSaveAction = (
+    <div className={styles.floatingActionContainer} ref={floatingActionsRef}>
+      <div className={styles.floatingActionList}>
+        <div className={validationErrors.length > 0 ? styles.floatingStatusError : styles.floatingStatus}>
+          {validationErrors.length > 0 ? validationErrors[0] : t('config_management.status_dirty')}
+        </div>
+        <button
+          type="button"
+          className={styles.floatingActionButton}
+          onClick={saveConfig}
+          disabled={saving || validationErrors.length > 0 || !dirty}
+          title={t('common.save')}
+          aria-label={t('common.save')}
+        >
+          {saving ? <IconLoader2 size={16} /> : <IconCheck size={16} />}
+          <span>{t('common.save')}</span>
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>{t('codex_retry_filter.title')}</h1>
-          <p className={styles.subtitle}>{t('codex_retry_filter.subtitle')}</p>
+          <div className={styles.subtitleRow}>
+            <p className={styles.subtitle}>{t('codex_retry_filter.subtitle')}</p>
+            <button type="button" className={styles.secondaryButton} onClick={refresh} disabled={loading}>
+              {loading ? <IconLoader2 size={14} /> : <IconRefreshCw size={14} />}
+              {t('common.refresh')}
+            </button>
+          </div>
         </div>
-        <div className={styles.headerActions}>
-          <button type="button" className={styles.secondaryButton} onClick={refresh} disabled={loading}>
-            {loading ? <IconLoader2 size={14} /> : <IconRefreshCw size={14} />}
-            {t('common.refresh')}
-          </button>
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={saveConfig}
-            disabled={saving || validationErrors.length > 0 || !dirty}
-          >
-            {saving ? <IconLoader2 size={14} /> : <IconCheck size={14} />}
-            {t('common.save')}
-          </button>
+      </div>
+
+      <div className={styles.dateToolbar}>
+        <div className={styles.toolbarLeft}>
+          <div className={styles.presets}>
+            {PRESETS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`${styles.presetBtn} ${item === preset ? styles.presetActive : ''}`.trim()}
+                onClick={() => handlePresetChange(item)}
+              >
+                {PRESET_LABELS[item]}
+              </button>
+            ))}
+            <span className={styles.presetDivider} />
+            <button
+              type="button"
+              className={`${styles.presetBtn} ${customMode ? styles.presetActive : ''}`.trim()}
+              onClick={handleCustomToggle}
+            >
+              {t('usage.custom_range')}
+            </button>
+          </div>
+          <div className={`${styles.dateRangeGroup} ${customMode ? styles.dateRangeGroupActive : ''}`}>
+            <DateTimeInput
+              label={t('usage.range_from')}
+              value={dateFrom}
+              disabled={!customMode}
+              onChange={handleDateFromChange}
+            />
+            <span className={styles.dateSep}>-</span>
+            <DateTimeInput
+              label={t('usage.range_to')}
+              value={dateTo}
+              disabled={!customMode}
+              onChange={handleDateToChange}
+            />
+          </div>
         </div>
       </div>
 
@@ -413,9 +639,16 @@ export function CodexRetryFilterPage() {
         </div>
       ) : null}
 
-      {config.enabled ? (
-        <div className={styles.warningBox}>
+      {metricsError ? (
+        <div className={styles.errorBox}>
           <IconAlertTriangle size={16} />
+          {metricsError}
+        </div>
+      ) : null}
+
+      {config.enabled ? (
+        <div className={styles.infoBox}>
+          <IconInfo size={16} />
           {t('codex_retry_filter.streaming_warning')}
         </div>
       ) : null}
@@ -503,7 +736,10 @@ export function CodexRetryFilterPage() {
         <MetricCard
           label={t('codex_retry_filter.metrics.hits')}
           value={metricsReady ? formatNumber(stats.hits) : '-'}
-          hint={metricsReady ? formatPercentage(stats.hitRate) : undefined}
+        />
+        <MetricCard
+          label={t('codex_retry_filter.metrics.hit_rate')}
+          value={metricsReady ? formatPercentage(stats.hitRate) : '-'}
         />
         <MetricCard
           label={t('codex_retry_filter.metrics.retry_success_rate')}
@@ -527,7 +763,7 @@ export function CodexRetryFilterPage() {
       {stats ? (
         <div className={styles.breakdownGrid}>
           <BreakdownTable title={t('codex_retry_filter.by_model')} rows={stats.byModel} />
-          <BreakdownTable title={t('codex_retry_filter.by_auth')} rows={stats.byAuth} />
+          <BreakdownTable title={t('codex_retry_filter.by_auth')} rows={stats.byAuth} keyLabel={t('codex_retry_filter.table.auth_label')} />
           <section className={styles.panel}>
             <div className={styles.panelHeader}>
               <h2>{t('codex_retry_filter.by_reasoning_tokens')}</h2>
@@ -586,6 +822,10 @@ export function CodexRetryFilterPage() {
       ) : null}
 
       <RecentHitsTable hits={hits} />
+
+      {showFloatingSave && typeof document !== 'undefined'
+        ? createPortal(floatingSaveAction, document.body)
+        : null}
     </div>
   );
 }

@@ -1521,6 +1521,7 @@
       "model": "模型",
       "client_model": "客户端模型",
       "auth": "认证",
+      "auth_label": "标签",
       "stream": "流式",
       "reasoning_tokens": "Reasoning tokens",
       "action": "动作",

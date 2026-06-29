@@ -1521,6 +1521,7 @@
       "model": "Model",
       "client_model": "Client model",
       "auth": "Auth",
+      "auth_label": "Label",
       "stream": "Stream",
       "reasoning_tokens": "Reasoning tokens",
       "action": "Action",
