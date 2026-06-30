@@ -120,7 +120,8 @@
     "quota_management": "配額管理",
     "config_management": "設定面板",
     "logs": "日誌檢視器",
-    "system_info": "管理中心資訊"
+    "system_info": "管理中心資訊",
+    "codex_retry_filter": "Codex 重試過濾"
   },
   "nav_groups": {
     "operate": "運行",
@@ -137,7 +138,8 @@
     "quota_management": "API 金鑰與限制",
     "logs": "請求追蹤",
     "config_management": "閘道設定",
-    "system_info": "執行與診斷"
+    "system_info": "執行與診斷",
+    "codex_retry_filter": "Responses 重試命中"
   },
   "dashboard": {
     "title": "儀表板",
@@ -1472,6 +1474,69 @@
     },
     "modelCatalog": {
       "notLoaded": "未載入"
+    }
+  },
+  "codex_retry_filter": {
+    "title": "Codex 重試過濾",
+    "subtitle": "管理 OpenAI Responses 協議的 Codex reasoning token 命中重試與觀測資料。",
+    "config_title": "過濾設定",
+    "matching_title": "模型與命中條件",
+    "enabled": "已啟用",
+    "disabled": "已停用",
+    "enable_filter": "啟用過濾",
+    "protocol_scope": "僅套用於 Codex executor 的 openai-response 協議。",
+    "intercept_streaming": "攔截串流回應",
+    "intercept_streaming_desc": "命中後丟棄緩衝串流並自動重試。",
+    "intercept_non_streaming": "攔截非串流回應",
+    "intercept_non_streaming_desc": "命中後不回傳該回應，先在服務端重試。",
+    "guard_retry_attempts": "內部規則重試次數",
+    "models": "過濾模型匹配",
+    "reasoning_lengths": "命中 reasoning token 長度",
+    "streaming_warning": "啟用後，符合條件的串流 Responses 請求會緩衝到 response.completed 後再決定是否回傳。",
+    "save_success": "Codex 重試過濾設定已儲存",
+    "remove_item": "移除 {{value}}",
+    "recent_hits": "最近命中",
+    "by_model": "依模型",
+    "by_auth": "依認證",
+    "by_reasoning_tokens": "依 reasoning token",
+    "by_action": "依動作",
+    "no_data": "暫無資料",
+    "no_hits": "暫無命中記錄",
+    "metrics": {
+      "attempts": "檢查次數",
+      "hits": "命中次數",
+      "hit_rate": "命中率",
+      "retry_success_rate": "重試成功率",
+      "final_successes": "最終成功",
+      "internal_retries": "內部重試",
+      "conductor_retries": "調度重試",
+      "observe_only_hits": "僅觀測命中"
+    },
+    "table": {
+      "key": "對象",
+      "time": "時間",
+      "model": "模型",
+      "client_model": "客戶端模型",
+      "auth": "認證",
+      "auth_label": "標籤",
+      "stream": "串流",
+      "reasoning_tokens": "Reasoning tokens",
+      "action": "動作",
+      "remaining": "剩餘重試",
+      "attempt": "嘗試",
+      "final_success": "最終成功"
+    },
+    "actions": {
+      "pass": "通過",
+      "observe_only": "僅觀測",
+      "internal_retry": "內部重試",
+      "conductor_retry": "調度重試"
+    },
+    "validation": {
+      "models_required": "至少需要一個模型匹配規則。",
+      "lengths_required": "至少需要一個命中長度。",
+      "guard_retry_invalid": "內部規則重試次數必須是非負整數。",
+      "intercept_required": "啟用過濾時，串流和非串流攔截不能同時關閉。"
     }
   }
 }

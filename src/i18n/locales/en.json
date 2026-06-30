@@ -120,7 +120,8 @@
     "quota_management": "Quota Management",
     "config_management": "Config Panel",
     "logs": "Logs Viewer",
-    "system_info": "Management Center Info"
+    "system_info": "Management Center Info",
+    "codex_retry_filter": "Codex Retry Filter"
   },
   "nav_groups": {
     "operate": "Operate",
@@ -137,7 +138,8 @@
     "quota_management": "API keys & limits",
     "logs": "Request tracing",
     "config_management": "Gateway configuration",
-    "system_info": "Runtime & diagnostics"
+    "system_info": "Runtime & diagnostics",
+    "codex_retry_filter": "Responses retry hits"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1475,6 +1477,69 @@
     },
     "modelCatalog": {
       "notLoaded": "Not loaded"
+    }
+  },
+  "codex_retry_filter": {
+    "title": "Codex Retry Filter",
+    "subtitle": "Manage Codex reasoning-token retry filtering and hit telemetry for OpenAI Responses traffic.",
+    "config_title": "Filter Config",
+    "matching_title": "Model And Hit Rules",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enable_filter": "Enable filter",
+    "protocol_scope": "Applies only to Codex executor openai-response traffic.",
+    "intercept_streaming": "Intercept streaming responses",
+    "intercept_streaming_desc": "Discard matched buffered streams and retry automatically.",
+    "intercept_non_streaming": "Intercept non-streaming responses",
+    "intercept_non_streaming_desc": "Retry server-side instead of returning a matched response.",
+    "guard_retry_attempts": "Internal rule retries",
+    "models": "Filtered model patterns",
+    "reasoning_lengths": "Matched reasoning token lengths",
+    "streaming_warning": "When enabled, eligible streaming Responses requests are buffered until response.completed before being returned.",
+    "save_success": "Codex retry filter config saved",
+    "remove_item": "Remove {{value}}",
+    "recent_hits": "Recent Hits",
+    "by_model": "By Model",
+    "by_auth": "By Auth",
+    "by_reasoning_tokens": "By Reasoning Tokens",
+    "by_action": "By Action",
+    "no_data": "No data",
+    "no_hits": "No hit records",
+    "metrics": {
+      "attempts": "Attempts",
+      "hits": "Hits",
+      "hit_rate": "Hit rate",
+      "retry_success_rate": "Retry success rate",
+      "final_successes": "final successes",
+      "internal_retries": "Internal retries",
+      "conductor_retries": "Conductor retries",
+      "observe_only_hits": "Observe-only hits"
+    },
+    "table": {
+      "key": "Key",
+      "time": "Time",
+      "model": "Model",
+      "client_model": "Client model",
+      "auth": "Auth",
+      "auth_label": "Label",
+      "stream": "Stream",
+      "reasoning_tokens": "Reasoning tokens",
+      "action": "Action",
+      "remaining": "Remaining",
+      "attempt": "Attempt",
+      "final_success": "Final success"
+    },
+    "actions": {
+      "pass": "Pass",
+      "observe_only": "Observe only",
+      "internal_retry": "Internal retry",
+      "conductor_retry": "Conductor retry"
+    },
+    "validation": {
+      "models_required": "At least one model pattern is required.",
+      "lengths_required": "At least one hit length is required.",
+      "guard_retry_invalid": "Internal rule retries must be a non-negative integer.",
+      "intercept_required": "Streaming and non-streaming intercepts cannot both be off while enabled."
     }
   }
 }

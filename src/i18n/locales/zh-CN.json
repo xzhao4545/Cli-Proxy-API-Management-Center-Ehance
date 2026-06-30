@@ -120,7 +120,8 @@
     "quota_management": "配额管理",
     "config_management": "配置面板",
     "logs": "日志查看器",
-    "system_info": "管理中心信息"
+    "system_info": "管理中心信息",
+    "codex_retry_filter": "Codex 重试过滤"
   },
   "nav_groups": {
     "operate": "运行",
@@ -137,7 +138,8 @@
     "quota_management": "API 密钥和限制",
     "logs": "请求追踪",
     "config_management": "网关配置",
-    "system_info": "运行与诊断"
+    "system_info": "运行与诊断",
+    "codex_retry_filter": "Responses 重试命中"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -1475,6 +1477,69 @@
     },
     "modelCatalog": {
       "notLoaded": "未加载"
+    }
+  },
+  "codex_retry_filter": {
+    "title": "Codex 重试过滤",
+    "subtitle": "管理 OpenAI Responses 协议的 Codex reasoning token 命中重试与观测数据。",
+    "config_title": "过滤配置",
+    "matching_title": "模型与命中条件",
+    "enabled": "已启用",
+    "disabled": "已停用",
+    "enable_filter": "启用过滤",
+    "protocol_scope": "仅应用于 Codex executor 的 openai-response 协议。",
+    "intercept_streaming": "拦截流式响应",
+    "intercept_streaming_desc": "命中后丢弃缓冲流并自动重试。",
+    "intercept_non_streaming": "拦截非流式响应",
+    "intercept_non_streaming_desc": "命中后不返回该响应，先在服务端重试。",
+    "guard_retry_attempts": "内部规则重试次数",
+    "models": "过滤模型匹配",
+    "reasoning_lengths": "命中 reasoning token 长度",
+    "streaming_warning": "启用后，符合条件的流式 Responses 请求会缓冲到 response.completed 后再决定是否返回。",
+    "save_success": "Codex 重试过滤配置已保存",
+    "remove_item": "移除 {{value}}",
+    "recent_hits": "最近命中",
+    "by_model": "按模型",
+    "by_auth": "按认证",
+    "by_reasoning_tokens": "按 reasoning token",
+    "by_action": "按动作",
+    "no_data": "暂无数据",
+    "no_hits": "暂无命中记录",
+    "metrics": {
+      "attempts": "检查次数",
+      "hits": "命中次数",
+      "hit_rate": "命中率",
+      "retry_success_rate": "重试成功率",
+      "final_successes": "最终成功",
+      "internal_retries": "内部重试",
+      "conductor_retries": "调度重试",
+      "observe_only_hits": "仅观测命中"
+    },
+    "table": {
+      "key": "对象",
+      "time": "时间",
+      "model": "模型",
+      "client_model": "客户端模型",
+      "auth": "认证",
+      "auth_label": "标签",
+      "stream": "流式",
+      "reasoning_tokens": "Reasoning tokens",
+      "action": "动作",
+      "remaining": "剩余重试",
+      "attempt": "尝试",
+      "final_success": "最终成功"
+    },
+    "actions": {
+      "pass": "通过",
+      "observe_only": "仅观测",
+      "internal_retry": "内部重试",
+      "conductor_retry": "调度重试"
+    },
+    "validation": {
+      "models_required": "至少需要一个模型匹配规则。",
+      "lengths_required": "至少需要一个命中长度。",
+      "guard_retry_invalid": "内部规则重试次数必须是非负整数。",
+      "intercept_required": "启用过滤时，流式和非流式拦截不能同时关闭。"
     }
   }
 }
