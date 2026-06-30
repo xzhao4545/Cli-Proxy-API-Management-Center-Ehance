@@ -125,6 +125,9 @@ const normalizeHits = (payload: unknown): CodexRetryFilterHitsResponse => {
   const data = asRecord(payload);
   return {
     hits: asArray(data.hits).map(normalizeHit),
+    hasMore: asBoolean(data.has_more),
+    nextBeforeOccurredAt: asString(data.next_before_occurred_at) || undefined,
+    nextBeforeId: asNumber(data.next_before_id) || undefined,
   };
 };
 
@@ -137,6 +140,8 @@ const serializeQueryParams = (params: CodexRetryFilterQueryParams = {}) => ({
   action: params.action || undefined,
   limit: params.limit,
   offset: params.offset,
+  before_occurred_at: params.beforeOccurredAt || undefined,
+  before_id: params.beforeId,
 });
 
 export const codexRetryFilterApi = {

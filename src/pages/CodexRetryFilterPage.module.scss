@@ -586,6 +586,105 @@
   min-width: 1180px;
 }
 
+.sectionHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.pageSizeSelect {
+  min-width: 96px;
+}
+
+.pageJumpGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: $spacing-sm;
+}
+
+.pageJumpInput {
+  width: 52px;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  text-align: center;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &:focus {
+    border-color: var(--primary-color);
+    outline: none;
+  }
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+}
+
+.pageJumpBtn {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+}
+
+.pageBtn {
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+
+.pageInfo {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .floatingActionContainer {
   position: fixed;
   left: var(--content-center-x, 50%);
@@ -738,6 +837,20 @@
   .primaryButton,
   .secondaryButton {
     width: 100%;
+  }
+
+  .sectionHeaderActions,
+  .pageJumpGroup {
+    width: 100%;
+  }
+
+  .pageSizeSelect {
+    width: 100%;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: $spacing-sm;
   }
 
   .floatingActionContainer {

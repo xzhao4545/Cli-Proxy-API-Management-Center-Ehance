@@ -1499,6 +1499,14 @@
     "save_success": "Codex retry filter config saved",
     "remove_item": "Remove {{value}}",
     "recent_hits": "Recent Hits",
+    "pagination": {
+      "page": "Page {{page}}",
+      "previous": "Previous",
+      "next": "Next",
+      "page_size": "Page size",
+      "page_size_option": "{{count}} / page",
+      "page_jump": "Jump to page"
+    },
     "by_model": "By Model",
     "by_auth": "By Auth",
     "by_reasoning_tokens": "By Reasoning Tokens",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { codexRetryFilterApi } from '@/services/api';
+import { Select, type SelectOption } from '@/components/ui/Select';
 import { useAuthStore, useNotificationStore } from '@/stores';
 import {
   IconAlertTriangle,
@@ -30,7 +31,8 @@ const DEFAULT_CONFIG: CodexRetryFilterConfig = {
   guardRetryAttempts: 3,
 };
 
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 type DatePreset = '1h' | '6h' | '24h' | '7d' | '30d';
 
 const PRESETS: DatePreset[] = ['1h', '6h', '24h', '7d', '30d'];
@@ -303,12 +305,49 @@ function BreakdownTable({
   );
 }
 
-function RecentHitsTable({ hits }: { hits: CodexRetryFilterHit[] }) {
+function RecentHitsSection({
+  hits,
+  loading,
+  hasMore,
+  currentPage,
+  pageSize,
+  pageSizeOptions,
+  pageJump,
+  onPageJumpChange,
+  onPageJumpSubmit,
+  onPageSizeChange,
+  onPrevious,
+  onNext,
+}: {
+  hits: CodexRetryFilterHit[];
+  loading: boolean;
+  hasMore: boolean;
+  currentPage: number;
+  pageSize: number;
+  pageSizeOptions: SelectOption[];
+  pageJump: string;
+  onPageJumpChange: (value: string) => void;
+  onPageJumpSubmit: () => void;
+  onPageSizeChange: (value: number) => void;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <section className={styles.panel}>
       <div className={styles.panelHeader}>
         <h2>{t('codex_retry_filter.recent_hits')}</h2>
+        <div className={styles.sectionHeaderActions}>
+          <Select
+            className={styles.pageSizeSelect}
+            value={String(pageSize)}
+            options={pageSizeOptions}
+            onChange={(value) => onPageSizeChange(Number(value))}
+            ariaLabel={t('codex_retry_filter.pagination.page_size')}
+            fullWidth={false}
+            size="sm"
+          />
+        </div>
       </div>
       <div className={styles.tableWrap}>
         <table className={`${styles.compactTable} ${styles.hitsTable}`}>
@@ -356,6 +395,48 @@ function RecentHitsTable({ hits }: { hits: CodexRetryFilterHit[] }) {
           </tbody>
         </table>
       </div>
+      <div className={styles.pagination}>
+        <button
+          type="button"
+          className={styles.pageBtn}
+          onClick={onPrevious}
+          disabled={loading || currentPage <= 1}
+        >
+          {t('codex_retry_filter.pagination.previous')}
+        </button>
+        <span className={styles.pageInfo}>
+          {t('codex_retry_filter.pagination.page', { page: currentPage })}
+        </span>
+        <button
+          type="button"
+          className={styles.pageBtn}
+          onClick={onNext}
+          disabled={loading || !hasMore}
+        >
+          {t('codex_retry_filter.pagination.next')}
+        </button>
+        <span className={styles.pageJumpGroup}>
+          <input
+            type="number"
+            className={styles.pageJumpInput}
+            value={pageJump}
+            onChange={(event) => onPageJumpChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') onPageJumpSubmit();
+            }}
+            min={1}
+            placeholder={t('codex_retry_filter.pagination.page_jump')}
+          />
+          <button
+            type="button"
+            className={styles.pageJumpBtn}
+            onClick={onPageJumpSubmit}
+            disabled={loading}
+          >
+            GO
+          </button>
+        </span>
+      </div>
     </section>
   );
 }
@@ -370,6 +451,10 @@ export function CodexRetryFilterPage() {
   const [savedConfig, setSavedConfig] = useState<CodexRetryFilterConfig>(DEFAULT_CONFIG);
   const [stats, setStats] = useState<CodexRetryFilterStats | null>(null);
   const [hits, setHits] = useState<CodexRetryFilterHit[]>([]);
+  const [hitsHasMore, setHitsHasMore] = useState(false);
+  const [hitsPage, setHitsPage] = useState(0);
+  const [hitsPageSize, setHitsPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [hitsPageJump, setHitsPageJump] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -411,6 +496,24 @@ export function CodexRetryFilterPage() {
     };
   }, [customMode, dateFrom, dateTo]);
 
+  const pageSizeOptions = useMemo<SelectOption[]>(() =>
+    PAGE_SIZE_OPTIONS.map((value) => ({
+      value: String(value),
+      label: t('codex_retry_filter.pagination.page_size_option', { count: value }),
+    })), [t]);
+
+  const hitsQueryParams = useMemo(() => ({
+    from: dateRange.from,
+    to: dateRange.to,
+    limit: hitsPageSize,
+    offset: hitsPage * hitsPageSize,
+  }), [dateRange.from, dateRange.to, hitsPage, hitsPageSize]);
+
+  const resetHitsPaging = useCallback(() => {
+    setHitsPage(0);
+    setHitsPageJump('');
+  }, []);
+
   const loadData = useCallback(async () => {
     if (!connected) {
       setLoading(false);
@@ -430,7 +533,7 @@ export function CodexRetryFilterPage() {
       };
       const [statsResult, hitsResult] = await Promise.allSettled([
         codexRetryFilterApi.getStats(queryParams),
-        codexRetryFilterApi.getHits({ ...queryParams, limit: PAGE_SIZE }),
+        codexRetryFilterApi.getHits(hitsQueryParams),
       ]);
       if (statsResult.status === 'fulfilled') {
         setStats(statsResult.value);
@@ -439,8 +542,10 @@ export function CodexRetryFilterPage() {
       }
       if (hitsResult.status === 'fulfilled') {
         setHits(hitsResult.value.hits);
+        setHitsHasMore(hitsResult.value.hasMore);
       } else {
         setHits([]);
+        setHitsHasMore(false);
       }
       const metricErrors = [statsResult, hitsResult]
         .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
@@ -453,7 +558,7 @@ export function CodexRetryFilterPage() {
     } finally {
       setLoading(false);
     }
-  }, [connected, dateRange]);
+  }, [connected, dateRange, hitsQueryParams]);
 
   useEffect(() => {
     void loadData();
@@ -486,10 +591,36 @@ export function CodexRetryFilterPage() {
   }, [config, showNotification, t, validationErrors]);
 
   const refresh = useCallback(() => {
+    resetHitsPaging();
     setLoadKey((key) => key + 1);
+  }, [resetHitsPaging]);
+
+  const handleHitsNext = useCallback(() => {
+    if (!hitsHasMore) return;
+    setHitsPage((page) => page + 1);
+  }, [hitsHasMore]);
+
+  const handleHitsPrevious = useCallback(() => {
+    if (hitsPage <= 0) return;
+    setHitsPage((page) => Math.max(0, page - 1));
+  }, [hitsPage]);
+
+  const handleHitsPageSizeChange = useCallback((value: number) => {
+    setHitsPageSize(value);
+    setHitsPage(0);
+    setHitsPageJump('');
   }, []);
 
+  const handleHitsPageJump = useCallback(() => {
+    const target = parseInt(hitsPageJump, 10);
+    if (!Number.isNaN(target) && target >= 1) {
+      setHitsPage(target - 1);
+    }
+    setHitsPageJump('');
+  }, [hitsPageJump]);
+
   const handlePresetChange = useCallback((newPreset: DatePreset) => {
+    resetHitsPaging();
     setPreset(newPreset);
     setCustomMode(false);
     const now = new Date();
@@ -503,24 +634,27 @@ export function CodexRetryFilterPage() {
     }
     setDateFrom(formatDateInput(from));
     setDateTo('');
-  }, []);
+  }, [resetHitsPaging]);
 
   const handleCustomToggle = useCallback(() => {
+    resetHitsPaging();
     setCustomMode(true);
     setPreset(null);
-  }, []);
+  }, [resetHitsPaging]);
 
   const handleDateFromChange = useCallback((value: string) => {
+    resetHitsPaging();
     setDateFrom(value);
     setCustomMode(true);
     setPreset(null);
-  }, []);
+  }, [resetHitsPaging]);
 
   const handleDateToChange = useCallback((value: string) => {
+    resetHitsPaging();
     setDateTo(value);
     setCustomMode(true);
     setPreset(null);
-  }, []);
+  }, [resetHitsPaging]);
 
   const metricsReady = stats && !loading;
   const showFloatingSave = dirty;
@@ -821,7 +955,20 @@ export function CodexRetryFilterPage() {
         </div>
       ) : null}
 
-      <RecentHitsTable hits={hits} />
+      <RecentHitsSection
+        hits={hits}
+        loading={loading}
+        hasMore={hitsHasMore}
+        currentPage={hitsPage + 1}
+        pageSize={hitsPageSize}
+        pageSizeOptions={pageSizeOptions}
+        pageJump={hitsPageJump}
+        onPageJumpChange={setHitsPageJump}
+        onPageJumpSubmit={handleHitsPageJump}
+        onPageSizeChange={handleHitsPageSizeChange}
+        onPrevious={handleHitsPrevious}
+        onNext={handleHitsNext}
+      />
 
       {showFloatingSave && typeof document !== 'undefined'
         ? createPortal(floatingSaveAction, document.body)

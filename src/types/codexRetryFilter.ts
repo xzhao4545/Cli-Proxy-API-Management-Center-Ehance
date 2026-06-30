@@ -71,6 +71,9 @@ export interface CodexRetryFilterHit {
 
 export interface CodexRetryFilterHitsResponse {
   hits: CodexRetryFilterHit[];
+  hasMore: boolean;
+  nextBeforeOccurredAt?: string;
+  nextBeforeId?: number;
 }
 
 export interface CodexRetryFilterQueryParams {
@@ -82,4 +85,6 @@ export interface CodexRetryFilterQueryParams {
   action?: string;
   limit?: number;
   offset?: number;
+  beforeOccurredAt?: string;
+  beforeId?: number;
 }
