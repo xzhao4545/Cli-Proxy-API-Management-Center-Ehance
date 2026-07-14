@@ -120,7 +120,8 @@
     "quota_management": "Управление квотами",
     "config_management": "Панель конфигурации",
     "logs": "Журнал",
-    "system_info": "Информация о центре"
+    "system_info": "Информация о центре",
+    "unavailable": "Недоступность"
   },
   "nav_groups": {
     "operate": "Работа",
@@ -137,7 +138,8 @@
     "quota_management": "API-ключи и лимиты",
     "logs": "Отслеживание запросов",
     "config_management": "Конфигурация шлюза",
-    "system_info": "Диагностика"
+    "system_info": "Диагностика",
+    "unavailable": "Охлаждение и восстановление"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -1444,5 +1446,46 @@
     "modelCatalog": {
       "notLoaded": "Не загружено"
     }
+  },
+  "unavailable": {
+    "title": "Недоступность / Cooldown",
+    "description": "Просматривайте runtime cooldown провайдеров и моделей после сбоев и восстанавливайте их без перезапуска процесса.",
+    "filter_provider": "Провайдер",
+    "filter_provider_placeholder": "напр. codex",
+    "filter_auth_index": "Auth Index",
+    "filter_auth_index_placeholder": "auth_index",
+    "filter_model": "Модель",
+    "filter_model_placeholder": "опционально",
+    "active_only": "Только активные",
+    "include_nonblocking": "Включая non-blocking",
+    "total": "Всего",
+    "blocking": "Блокирующие",
+    "col_scope": "Область",
+    "col_provider": "Провайдер",
+    "col_auth": "Auth",
+    "col_model": "Модель",
+    "col_reason": "Причина",
+    "col_retry_after": "Retry After",
+    "col_status": "Статус",
+    "scope_auth": "Auth",
+    "scope_model": "Model",
+    "status_blocking": "Blocking",
+    "status_soft": "Soft",
+    "quota_exceeded": "Quota exceeded",
+    "reset": "Восстановить",
+    "reset_all": "Восстановить всё",
+    "empty_title": "Нет недоступных записей",
+    "empty_description": "Нет совпадающих провайдеров или моделей в cooldown.",
+    "missing_auth_index": "У записи отсутствует auth_index",
+    "confirm_reset_title": "Восстановить запись",
+    "confirm_reset_auth": "Очистить cooldown для auth {{auth}} и всех его моделей?",
+    "confirm_reset_model": "Очистить cooldown модели {{model}} на auth {{auth}}?",
+    "confirm_reset_all_title": "Восстановить всё",
+    "confirm_reset_all": "Очистить cooldown для всех недоступных auth/model?",
+    "confirm_reset_all_provider": "Очистить cooldown всех недоступных записей провайдера {{provider}}?",
+    "reset_success": "Cooldown восстановлен",
+    "reset_failed": "Не удалось восстановить cooldown",
+    "reset_all_success": "Восстановлено auth: {{count}}, моделей: {{models}}",
+    "reset_all_failed": "Не удалось восстановить все cooldown"
   }
 }

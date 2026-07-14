@@ -120,7 +120,8 @@
     "quota_management": "配额管理",
     "config_management": "配置面板",
     "logs": "日志查看器",
-    "system_info": "管理中心信息"
+    "system_info": "管理中心信息",
+    "unavailable": "不可用/冷却"
   },
   "nav_groups": {
     "operate": "运行",
@@ -137,7 +138,8 @@
     "quota_management": "API 密钥和限制",
     "logs": "请求追踪",
     "config_management": "网关配置",
-    "system_info": "运行与诊断"
+    "system_info": "运行与诊断",
+    "unavailable": "失败冷却与恢复"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -1476,5 +1478,46 @@
     "modelCatalog": {
       "notLoaded": "未加载"
     }
+  },
+  "unavailable": {
+    "title": "不可用 / 冷却",
+    "description": "查看请求失败导致的提供商/模型冷却状态，并可手动恢复，无需重启进程。",
+    "filter_provider": "提供商",
+    "filter_provider_placeholder": "例如 codex",
+    "filter_auth_index": "认证索引",
+    "filter_auth_index_placeholder": "auth_index",
+    "filter_model": "模型",
+    "filter_model_placeholder": "可选模型",
+    "active_only": "仅活跃冷却",
+    "include_nonblocking": "包含非阻塞项",
+    "total": "总数",
+    "blocking": "阻塞中",
+    "col_scope": "范围",
+    "col_provider": "提供商",
+    "col_auth": "认证",
+    "col_model": "模型",
+    "col_reason": "原因",
+    "col_retry_after": "剩余冷却",
+    "col_status": "状态",
+    "scope_auth": "认证级",
+    "scope_model": "模型级",
+    "status_blocking": "阻塞",
+    "status_soft": "软状态",
+    "quota_exceeded": "配额超限",
+    "reset": "恢复",
+    "reset_all": "全部恢复",
+    "empty_title": "暂无不可用项",
+    "empty_description": "当前没有匹配的提供商或模型处于冷却中。",
+    "missing_auth_index": "该条目缺少 auth_index",
+    "confirm_reset_title": "恢复条目",
+    "confirm_reset_auth": "确认清除认证 {{auth}} 及其全部模型的冷却状态？",
+    "confirm_reset_model": "确认清除认证 {{auth}} 上模型 {{model}} 的冷却状态？",
+    "confirm_reset_all_title": "全部恢复",
+    "confirm_reset_all": "确认清除当前所有不可用认证/模型的冷却状态？",
+    "confirm_reset_all_provider": "确认清除提供商 {{provider}} 下所有不可用条目的冷却状态？",
+    "reset_success": "已恢复冷却状态",
+    "reset_failed": "恢复冷却失败",
+    "reset_all_success": "已恢复 {{count}} 个认证，清理 {{models}} 个模型状态",
+    "reset_all_failed": "全部恢复失败"
   }
 }

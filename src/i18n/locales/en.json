@@ -120,7 +120,8 @@
     "quota_management": "Quota Management",
     "config_management": "Config Panel",
     "logs": "Logs Viewer",
-    "system_info": "Management Center Info"
+    "system_info": "Management Center Info",
+    "unavailable": "Unavailable"
   },
   "nav_groups": {
     "operate": "Operate",
@@ -137,7 +138,8 @@
     "quota_management": "API keys & limits",
     "logs": "Request tracing",
     "config_management": "Gateway configuration",
-    "system_info": "Runtime & diagnostics"
+    "system_info": "Runtime & diagnostics",
+    "unavailable": "Cooldown and cooldowns"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1476,5 +1478,46 @@
     "modelCatalog": {
       "notLoaded": "Not loaded"
     }
+  },
+  "unavailable": {
+    "title": "Unavailable / Cooldown",
+    "description": "Inspect runtime provider and model cooldowns caused by request failures, then restore them without restarting the process.",
+    "filter_provider": "Provider",
+    "filter_provider_placeholder": "e.g. codex",
+    "filter_auth_index": "Auth Index",
+    "filter_auth_index_placeholder": "auth_index",
+    "filter_model": "Model",
+    "filter_model_placeholder": "optional model",
+    "active_only": "Active only",
+    "include_nonblocking": "Include non-blocking",
+    "total": "Total",
+    "blocking": "Blocking",
+    "col_scope": "Scope",
+    "col_provider": "Provider",
+    "col_auth": "Auth",
+    "col_model": "Model",
+    "col_reason": "Reason",
+    "col_retry_after": "Retry After",
+    "col_status": "Status",
+    "scope_auth": "Auth",
+    "scope_model": "Model",
+    "status_blocking": "Blocking",
+    "status_soft": "Soft",
+    "quota_exceeded": "Quota exceeded",
+    "reset": "Restore",
+    "reset_all": "Restore All",
+    "empty_title": "No unavailable entries",
+    "empty_description": "No matching provider or model is currently cooling down.",
+    "missing_auth_index": "Missing auth_index for this entry",
+    "confirm_reset_title": "Restore entry",
+    "confirm_reset_auth": "Clear cooldown state for auth {{auth}} and all of its models?",
+    "confirm_reset_model": "Clear cooldown state for model {{model}} on auth {{auth}}?",
+    "confirm_reset_all_title": "Restore all",
+    "confirm_reset_all": "Clear cooldown state for every currently unavailable auth/model?",
+    "confirm_reset_all_provider": "Clear cooldown state for every currently unavailable entry under provider {{provider}}?",
+    "reset_success": "Cooldown restored",
+    "reset_failed": "Failed to restore cooldown",
+    "reset_all_success": "Restored {{count}} auth(s), cleared {{models}} model state(s)",
+    "reset_all_failed": "Failed to restore all cooldowns"
   }
 }
