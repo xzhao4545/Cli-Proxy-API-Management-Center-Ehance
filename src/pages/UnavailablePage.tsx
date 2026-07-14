@@ -770,28 +770,36 @@ export function UnavailablePage() {
               const providerCollapsed = Boolean(collapsedProviders[providerNode.key]);
               return (
                 <section key={providerNode.key} className={styles.providerNode}>
-                  <div className={styles.providerHeader}>
-                    <div className={styles.providerTitle}>
-                      <button
-                        type="button"
-                        className={styles.collapseButton}
-                        onClick={() => toggleProvider(providerNode.key)}
-                        aria-expanded={!providerCollapsed}
-                      >
-                        <IconChevronDown
-                          size={14}
-                          className={
-                            providerCollapsed ? styles.chevronCollapsed : styles.chevronExpanded
-                          }
-                        />
-                      </button>
-                      <span className={styles.providerName}>{providerNode.provider}</span>
+                  <div className={`${styles.entryRow} ${styles.providerHeader}`}>
+                    <div className={styles.providerIdentity}>
+                      <div className={styles.providerTitle}>
+                        <button
+                          type="button"
+                          className={styles.collapseButton}
+                          onClick={() => toggleProvider(providerNode.key)}
+                          aria-expanded={!providerCollapsed}
+                        >
+                          <IconChevronDown
+                            size={14}
+                            className={
+                              providerCollapsed ? styles.chevronCollapsed : styles.chevronExpanded
+                            }
+                          />
+                        </button>
+                        <span className={styles.providerName}>{providerNode.provider}</span>
+                      </div>
+                      <div className={styles.providerMeta}>
+                        <span className={styles.summaryBadge}>{providerNode.totalEntries}</span>
+                        <span>
+                          {t('unavailable.blocking')}: {providerNode.blockingCount}
+                        </span>
+                      </div>
                     </div>
-                    <div className={styles.providerMeta}>
-                      <span className={styles.summaryBadge}>{providerNode.totalEntries}</span>
-                      <span>
-                        {t('unavailable.blocking')}: {providerNode.blockingCount}
-                      </span>
+                    <div className={styles.columnHeader}>{t('unavailable.col_reason')}</div>
+                    <div className={styles.columnHeader}>{t('unavailable.col_retry_after')}</div>
+                    <div className={styles.columnHeader}>{t('unavailable.col_status')}</div>
+                    <div className={`${styles.columnHeader} ${styles.columnHeaderAction}`}>
+                      {t('unavailable.col_action')}
                     </div>
                   </div>
 

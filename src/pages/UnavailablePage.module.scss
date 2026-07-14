@@ -169,14 +169,18 @@
   overflow: hidden;
 }
 
+// Same grid as .entryRow so column headers align with data cells.
 .providerHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   padding: 12px 14px;
   background: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+}
+
+.providerIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
 .providerTitle {
@@ -202,6 +206,20 @@
   flex-wrap: wrap;
   color: var(--text-secondary);
   font-size: 12px;
+  padding-left: 30px; // align under name (chevron width + gap)
+}
+
+.columnHeader {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.columnHeaderAction {
+  text-align: right;
 }
 
 .authList {
@@ -429,9 +447,12 @@
     width: 100%;
   }
 
-  .providerHeader {
-    flex-direction: column;
-    align-items: flex-start;
+  .columnHeader {
+    display: none;
+  }
+
+  .providerMeta {
+    padding-left: 0;
   }
 
   .entryRow {
