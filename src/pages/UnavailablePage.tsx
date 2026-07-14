@@ -216,6 +216,55 @@ function CountdownCell({
   );
 }
 
+function EntryIdentity({
+  scope,
+  name,
+  subtitle,
+  collapse,
+}: {
+  scope: 'auth' | 'model';
+  name: string;
+  subtitle?: string;
+  collapse?: {
+    expanded: boolean;
+    disabled?: boolean;
+    onToggle: () => void;
+  };
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className={styles.identity}>
+      <div className={styles.identityTop}>
+        {collapse ? (
+          <button
+            type="button"
+            className={styles.collapseButton}
+            onClick={collapse.onToggle}
+            aria-expanded={collapse.expanded}
+            disabled={collapse.disabled}
+          >
+            <IconChevronDown
+              size={14}
+              className={collapse.expanded ? styles.chevronExpanded : styles.chevronCollapsed}
+            />
+          </button>
+        ) : null}
+        <span className={`${styles.badge} ${scope === 'auth' ? styles.badgeAuth : styles.badgeModel}`}>
+          {scope === 'auth' ? t('unavailable.scope_auth') : t('unavailable.scope_model')}
+        </span>
+        <span className={styles.identityName} title={name}>
+          {name}
+        </span>
+      </div>
+      {subtitle ? (
+        <div className={styles.identitySub}>
+          <span className={`${styles.mono} ${styles.muted}`}>{subtitle}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function UnavailablePage() {
   const { t } = useTranslation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
@@ -671,23 +720,25 @@ export function UnavailablePage() {
               return (
                 <section key={providerNode.key} className={styles.providerNode}>
                   <div className={styles.providerHeader}>
-                    <button
-                      type="button"
-                      className={styles.collapseButton}
-                      onClick={() => toggleProvider(providerNode.key)}
-                      aria-expanded={!providerCollapsed}
-                    >
-                      <IconChevronDown
-                        size={14}
-                        className={
-                          providerCollapsed ? styles.chevronCollapsed : styles.chevronExpanded
-                        }
-                      />
+                    <div className={styles.providerTitle}>
+                      <button
+                        type="button"
+                        className={styles.collapseButton}
+                        onClick={() => toggleProvider(providerNode.key)}
+                        aria-expanded={!providerCollapsed}
+                      >
+                        <IconChevronDown
+                          size={14}
+                          className={
+                            providerCollapsed ? styles.chevronCollapsed : styles.chevronExpanded
+                          }
+                        />
+                      </button>
                       <span className={styles.providerName}>{providerNode.provider}</span>
-                    </button>
-                    <div className={styles.nodeMeta}>
+                    </div>
+                    <div className={styles.providerMeta}>
                       <span className={styles.summaryBadge}>{providerNode.totalEntries}</span>
-                      <span className={styles.muted}>
+                      <span>
                         {t('unavailable.blocking')}: {providerNode.blockingCount}
                       </span>
                     </div>
@@ -697,73 +748,66 @@ export function UnavailablePage() {
                     <div className={styles.authList}>
                       {providerNode.auths.map((authNode) => {
                         const authCollapsed = Boolean(collapsedAuths[authNode.key]);
-                        const authDeadline = parseDeadlineMs(authNode.authEntry?.next_retry_after);
+                        const authEntry = authNode.authEntry;
+                        const authDeadline = parseDeadlineMs(authEntry?.next_retry_after);
                         const authRemaining = remainingSecondsAt(authDeadline, nowMs);
-                        const authResetKey = authNode.authEntry
-                          ? entryKey(authNode.authEntry)
+                        const authResetKey = authEntry
+                          ? entryKey(authEntry)
                           : `auth|${authNode.authIndex}|`;
                         const authResetting = resettingKey === authResetKey;
+                        const canCollapseAuth = authNode.models.length > 0;
 
                         return (
                           <div key={authNode.key} className={styles.authNode}>
-                            <div className={styles.authHeader}>
-                              <button
-                                type="button"
-                                className={styles.collapseButton}
-                                onClick={() => toggleAuth(authNode.key)}
-                                aria-expanded={!authCollapsed}
-                                disabled={authNode.models.length === 0 && !authNode.authEntry}
-                              >
-                                <IconChevronDown
-                                  size={14}
-                                  className={
-                                    authCollapsed ? styles.chevronCollapsed : styles.chevronExpanded
-                                  }
-                                />
-                                <span className={styles.authName}>{authNode.label}</span>
-                              </button>
+                            <div className={`${styles.entryRow} ${styles.authHeader}`}>
+                              <EntryIdentity
+                                scope="auth"
+                                name={authNode.label}
+                                subtitle={
+                                  authNode.authIndex && authNode.authIndex !== authNode.label
+                                    ? authNode.authIndex
+                                    : undefined
+                                }
+                                collapse={
+                                  canCollapseAuth
+                                    ? {
+                                        expanded: !authCollapsed,
+                                        onToggle: () => toggleAuth(authNode.key),
+                                      }
+                                    : undefined
+                                }
+                              />
 
-                              <div className={styles.authInfo}>
-                                {authNode.authIndex ? (
-                                  <span className={`${styles.mono} ${styles.muted}`}>
-                                    {authNode.authIndex}
-                                  </span>
-                                ) : null}
-                                {authNode.authEntry ? (
-                                  <>
-                                    <span className={`${styles.badge} ${styles.badgeAuth}`}>
-                                      {t('unavailable.scope_auth')}
-                                    </span>
-                                    <span className={styles.reasonText}>
-                                      {authNode.authEntry.reason ||
-                                        authNode.authEntry.status_message ||
-                                        '-'}
-                                    </span>
-                                    <CountdownCell
-                                      deadlineText={authNode.authEntry.next_retry_after}
-                                      remaining={authRemaining}
-                                    />
-                                    <StatusBadges
-                                      entry={authNode.authEntry}
-                                      remaining={authRemaining}
-                                    />
-                                  </>
-                                ) : (
-                                  <span className={styles.muted}>
+                              {authEntry ? (
+                                <>
+                                  <div className={styles.reasonCell}>
+                                    {authEntry.reason || authEntry.status_message || '-'}
+                                  </div>
+                                  <CountdownCell
+                                    deadlineText={authEntry.next_retry_after}
+                                    remaining={authRemaining}
+                                  />
+                                  <StatusBadges entry={authEntry} remaining={authRemaining} />
+                                </>
+                              ) : (
+                                <>
+                                  <div className={styles.reasonCell}>
                                     {t('unavailable.models_count', {
                                       count: authNode.models.length,
                                     })}
-                                  </span>
-                                )}
-                              </div>
+                                  </div>
+                                  <span className={styles.placeholderDash}>-</span>
+                                  <span className={styles.placeholderDash}>-</span>
+                                </>
+                              )}
 
                               <div className={styles.rowActions}>
                                 <Button
                                   size="sm"
                                   variant="secondary"
                                   onClick={() =>
-                                    authNode.authEntry
-                                      ? handleResetEntry(authNode.authEntry)
+                                    authEntry
+                                      ? handleResetEntry(authEntry)
                                       : handleResetAuthNode(authNode)
                                   }
                                   disabled={
@@ -784,21 +828,16 @@ export function UnavailablePage() {
                                   const remaining = remainingSecondsAt(deadline, nowMs);
                                   const isResetting = resettingKey === key;
                                   return (
-                                    <div key={key} className={styles.modelRow}>
-                                      <div className={styles.modelMain}>
-                                        <span
-                                          className={`${styles.badge} ${styles.badgeModel}`}
-                                        >
-                                          {t('unavailable.scope_model')}
-                                        </span>
-                                        <span className={styles.mono}>
-                                          {modelEntry.model || '-'}
-                                        </span>
-                                        <span className={styles.reasonText}>
-                                          {modelEntry.reason ||
-                                            modelEntry.status_message ||
-                                            '-'}
-                                        </span>
+                                    <div
+                                      key={key}
+                                      className={`${styles.entryRow} ${styles.modelRow}`}
+                                    >
+                                      <EntryIdentity
+                                        scope="model"
+                                        name={modelEntry.model || '-'}
+                                      />
+                                      <div className={styles.reasonCell}>
+                                        {modelEntry.reason || modelEntry.status_message || '-'}
                                       </div>
                                       <CountdownCell
                                         deadlineText={modelEntry.next_retry_after}
