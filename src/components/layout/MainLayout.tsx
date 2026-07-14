@@ -15,7 +15,6 @@ import { MainRoutes } from '@/router/MainRoutes';
 import {
   IconSidebarAuthFiles,
   IconSidebarConfig,
-  IconSidebarCodexRetryFilter,
   IconSidebarDashboard,
   IconSidebarLogs,
   IconSidebarOauth,
@@ -47,7 +46,6 @@ const sidebarIcons: Record<string, ReactNode> = {
   logs: <IconSidebarLogs size={18} />,
   system: <IconSidebarSystem size={18} />,
   usage: <IconSidebarUsage size={18} />,
-  codexRetryFilter: <IconSidebarCodexRetryFilter size={18} />,
 };
 
 // Header action icons - smaller size for header buttons
@@ -434,12 +432,6 @@ export function MainLayout() {
           labelKey: 'nav.usage_stats',
           metaKey: 'nav_meta.usage_stats',
           icon: sidebarIcons.usage,
-        },
-        {
-          path: '/codex-retry-filter',
-          labelKey: 'nav.codex_retry_filter',
-          metaKey: 'nav_meta.codex_retry_filter',
-          icon: sidebarIcons.codexRetryFilter,
         },
         {
           path: '/quota',

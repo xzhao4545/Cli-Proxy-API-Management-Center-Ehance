@@ -9,7 +9,6 @@ import { QuotaPage } from '@/pages/QuotaPage';
 import { ConfigPage } from '@/pages/ConfigPage';
 import { LogsPage } from '@/pages/LogsPage';
 import { UsagePage } from '@/pages/UsagePage';
-import { CodexRetryFilterPage } from '@/pages/CodexRetryFilterPage';
 import { SystemPage } from '@/pages/SystemPage';
 
 const mainRoutes = [
@@ -25,7 +24,6 @@ const mainRoutes = [
   { path: '/oauth', element: <OAuthPage /> },
   { path: '/quota', element: <QuotaPage /> },
   { path: '/usage', element: <UsagePage /> },
-  { path: '/codex-retry-filter', element: <CodexRetryFilterPage /> },
   { path: '/config', element: <ConfigPage /> },
   { path: '/logs', element: <LogsPage /> },
   { path: '/system', element: <SystemPage /> },
