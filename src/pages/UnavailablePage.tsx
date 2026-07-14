@@ -84,6 +84,13 @@ function remainingSecondsAt(deadlineMs: number | null, nowMs: number): number {
   return Math.max(0, Math.ceil((deadlineMs - nowMs) / 1000));
 }
 
+function isLiveBlocking(entry: UnavailableEntry, nowMs: number): boolean {
+  return (
+    entry.blocking &&
+    remainingSecondsAt(parseDeadlineMs(entry.next_retry_after), nowMs) > 0
+  );
+}
+
 function entryKey(entry: UnavailableEntry): string {
   return [entry.scope, entry.auth_index || entry.auth_id || '', entry.model || ''].join('|');
 }
@@ -92,7 +99,17 @@ function displayAuth(entry: UnavailableEntry): string {
   return entry.label || entry.file_name || entry.auth_index || entry.auth_id || '-';
 }
 
-function buildTree(items: UnavailableEntry[]): TreeProviderNode[] {
+function filtersEqual(a: AppliedFilters, b: AppliedFilters): boolean {
+  return (
+    a.provider === b.provider &&
+    a.authIndex === b.authIndex &&
+    a.model === b.model &&
+    a.activeOnly === b.activeOnly &&
+    a.includeNonBlocking === b.includeNonBlocking
+  );
+}
+
+function buildTree(items: UnavailableEntry[], nowMs: number): TreeProviderNode[] {
   const providerMap = new Map<string, Map<string, TreeAuthNode>>();
 
   items.forEach((entry) => {
@@ -120,7 +137,6 @@ function buildTree(items: UnavailableEntry[]): TreeProviderNode[] {
       authNode.models.push(entry);
     } else {
       authNode.authEntry = entry;
-      // Prefer richer display name if auth-level row has label/file.
       authNode.label = displayAuth(entry);
       authNode.authIndex = entry.auth_index || authNode.authIndex;
       authNode.authId = entry.auth_id || authNode.authId;
@@ -143,10 +159,10 @@ function buildTree(items: UnavailableEntry[]): TreeProviderNode[] {
       auths.forEach((auth) => {
         if (auth.authEntry) {
           totalEntries += 1;
-          if (auth.authEntry.blocking) blockingCount += 1;
+          if (isLiveBlocking(auth.authEntry, nowMs)) blockingCount += 1;
         }
         totalEntries += auth.models.length;
-        blockingCount += auth.models.filter((model) => model.blocking).length;
+        blockingCount += auth.models.filter((model) => isLiveBlocking(model, nowMs)).length;
       });
 
       return {
@@ -186,18 +202,16 @@ function StatusBadges({
 }
 
 function CountdownCell({
-  deadlineMs,
+  deadlineText,
   remaining,
 }: {
-  deadlineMs: number | null;
+  deadlineText?: string;
   remaining: number;
 }) {
   return (
     <div className={styles.metaStack}>
       <span className={styles.countdown}>{formatDuration(remaining)}</span>
-      <span className={styles.muted}>
-        {deadlineMs == null ? '-' : formatDateTime(new Date(deadlineMs).toISOString())}
-      </span>
+      <span className={styles.muted}>{formatDateTime(deadlineText)}</span>
     </div>
   );
 }
@@ -230,6 +244,7 @@ export function UnavailablePage() {
 
   const appliedRef = useRef(applied);
   const loadingRef = useRef(false);
+  const requestIdRef = useRef(0);
   const expiredRefreshTimerRef = useRef<number | null>(null);
   const pendingExpiredRefreshRef = useRef(false);
   const knownExpiredKeysRef = useRef<Set<string>>(new Set());
@@ -251,6 +266,7 @@ export function UnavailablePage() {
         return;
       }
 
+      const requestId = ++requestIdRef.current;
       loadingRef.current = true;
       if (!options?.silent) {
         setLoading(true);
@@ -264,8 +280,13 @@ export function UnavailablePage() {
           active_only: filters.activeOnly,
           include_nonblocking: filters.includeNonBlocking,
         });
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         setItems(data.items);
-        // Drop expiry markers only for entries that regained a future deadline or disappeared.
+        setTotal(data.total);
+
+        // Keep keys that are still expired so we don't re-fire the same batch.
         const nextExpired = new Set<string>();
         const refreshedAt = Date.now();
         data.items.forEach((entry) => {
@@ -276,19 +297,24 @@ export function UnavailablePage() {
         });
         knownExpiredKeysRef.current = nextExpired;
       } catch (err: unknown) {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         setError(getErrorMessage(err, t('notification.refresh_failed')));
         if (!options?.silent) {
           setItems([]);
           setTotal(0);
         }
       } finally {
-        loadingRef.current = false;
-        if (!options?.silent) {
-          setLoading(false);
-        }
-        if (pendingExpiredRefreshRef.current) {
-          pendingExpiredRefreshRef.current = false;
-          void loadItems(appliedRef.current, { silent: true });
+        if (requestId === requestIdRef.current) {
+          loadingRef.current = false;
+          if (!options?.silent) {
+            setLoading(false);
+          }
+          if (pendingExpiredRefreshRef.current) {
+            pendingExpiredRefreshRef.current = false;
+            void loadItems(appliedRef.current, { silent: true });
+          }
         }
       }
     },
@@ -306,10 +332,14 @@ export function UnavailablePage() {
     [activeOnlyInput, authIndexInput, includeNonBlockingInput, modelInput, providerInput]
   );
 
+  // Filter change -> effect loads. Same filters refresh -> load once here.
   const applyAndLoad = useCallback(async () => {
     const next = buildFiltersFromInputs();
+    if (filtersEqual(appliedRef.current, next)) {
+      await loadItems(next);
+      return;
+    }
     setApplied(next);
-    await loadItems(next);
   }, [buildFiltersFromInputs, loadItems]);
 
   useHeaderRefresh(applyAndLoad);
@@ -359,10 +389,10 @@ export function UnavailablePage() {
     }
   }, [items, nowMs, scheduleExpiredRefresh]);
 
-  const tree = useMemo(() => buildTree(items), [items]);
+  const tree = useMemo(() => buildTree(items, nowMs), [items, nowMs]);
 
   const blockingCount = useMemo(
-    () => items.filter((item) => item.blocking && remainingSecondsAt(parseDeadlineMs(item.next_retry_after), nowMs) > 0).length,
+    () => items.filter((item) => isLiveBlocking(item, nowMs)).length,
     [items, nowMs]
   );
 
@@ -710,7 +740,7 @@ export function UnavailablePage() {
                                         '-'}
                                     </span>
                                     <CountdownCell
-                                      deadlineMs={authDeadline}
+                                      deadlineText={authNode.authEntry.next_retry_after}
                                       remaining={authRemaining}
                                     />
                                     <StatusBadges
@@ -771,7 +801,7 @@ export function UnavailablePage() {
                                         </span>
                                       </div>
                                       <CountdownCell
-                                        deadlineMs={deadline}
+                                        deadlineText={modelEntry.next_retry_after}
                                         remaining={remaining}
                                       />
                                       <StatusBadges entry={modelEntry} remaining={remaining} />
