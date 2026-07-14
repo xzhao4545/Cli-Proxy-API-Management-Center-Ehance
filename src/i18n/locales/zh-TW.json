@@ -1515,6 +1515,7 @@
     "reset_success": "已恢復冷卻狀態",
     "reset_failed": "恢復冷卻失敗",
     "reset_all_success": "已恢復 {{count}} 個認證，清理 {{models}} 個模型狀態",
-    "reset_all_failed": "全部恢復失敗"
+    "reset_all_failed": "全部恢復失敗",
+    "models_count": "{{count}} 個模型"
   }
 }

@@ -138,41 +138,160 @@
 
 .tableCard {
   overflow: hidden;
+  padding: $spacing-md;
 }
 
-.tableWrap {
-  width: 100%;
-  overflow-x: auto;
+.loadingRow,
+.emptyWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 160px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 980px;
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
 
-  th,
-  td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border-color);
-    text-align: left;
-    vertical-align: top;
-    font-size: 13px;
-  }
+.providerNode {
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: color-mix(in srgb, var(--bg-secondary) 55%, transparent);
+  overflow: hidden;
+}
 
-  th {
-    color: var(--text-secondary);
-    font-weight: 600;
-    background: color-mix(in srgb, var(--bg-secondary) 88%, transparent);
-    white-space: nowrap;
-  }
+.providerHeader,
+.authHeader,
+.modelRow {
+  display: grid;
+  gap: $spacing-sm;
+  align-items: center;
+}
 
-  td {
-    color: var(--text-primary);
-  }
+.providerHeader {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--bg-secondary) 88%, transparent);
+  border-bottom: 1px solid var(--border-color);
+}
 
-  tbody tr:hover {
-    background: color-mix(in srgb, var(--bg-hover) 70%, transparent);
+.authList {
+  display: flex;
+  flex-direction: column;
+}
+
+.authNode {
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+
+  &:first-child {
+    border-top: none;
   }
+}
+
+.authHeader {
+  grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1.8fr) auto;
+  padding: 12px 14px 12px 28px;
+  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+}
+
+.modelList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px 12px 48px;
+}
+
+.modelRow {
+  grid-template-columns: minmax(0, 1.6fr) minmax(120px, 0.7fr) minmax(100px, 0.6fr) auto;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+}
+
+.collapseButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.8;
+  }
+}
+
+.chevronExpanded,
+.chevronCollapsed {
+  flex: 0 0 auto;
+  transition: transform 0.15s ease;
+}
+
+.chevronCollapsed {
+  transform: rotate(-90deg);
+}
+
+.providerName,
+.authName {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.providerName {
+  font-size: 15px;
+}
+
+.authName {
+  font-size: 14px;
+}
+
+.nodeMeta,
+.authInfo,
+.modelMain,
+.metaStack,
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nodeMeta,
+.authInfo,
+.modelMain {
+  flex-wrap: wrap;
+}
+
+.metaStack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.reasonText {
+  color: var(--text-primary);
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .mono {
@@ -183,13 +302,7 @@
 
 .muted {
   color: var(--text-secondary);
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+  font-size: 12px;
 }
 
 .badge {
@@ -225,30 +338,8 @@
   color: var(--text-secondary);
 }
 
-.reasonCell {
-  max-width: 280px;
-  word-break: break-word;
-}
-
 .rowActions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.emptyCell {
-  padding: 36px 16px !important;
-  text-align: center;
-}
-
-.loadingRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 13px;
+  justify-content: flex-end;
 }
 
 @include mobile {
@@ -273,5 +364,27 @@
 
   .checkboxRow {
     width: 100%;
+  }
+
+  .providerHeader,
+  .authHeader,
+  .modelRow {
+    grid-template-columns: 1fr;
+  }
+
+  .authHeader {
+    padding-left: 14px;
+  }
+
+  .modelList {
+    padding-left: 14px;
+  }
+
+  .rowActions {
+    justify-content: stretch;
+
+    :global(.btn) {
+      width: 100%;
+    }
   }
 }

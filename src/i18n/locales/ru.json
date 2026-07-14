@@ -1486,6 +1486,7 @@
     "reset_success": "Cooldown восстановлен",
     "reset_failed": "Не удалось восстановить cooldown",
     "reset_all_success": "Восстановлено auth: {{count}}, моделей: {{models}}",
-    "reset_all_failed": "Не удалось восстановить все cooldown"
+    "reset_all_failed": "Не удалось восстановить все cooldown",
+    "models_count": "моделей: {{count}}"
   }
 }
