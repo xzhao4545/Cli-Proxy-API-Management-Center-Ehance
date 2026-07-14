@@ -1518,6 +1518,7 @@
     "reset_success": "已恢复冷却状态",
     "reset_failed": "恢复冷却失败",
     "reset_all_success": "已恢复 {{count}} 个认证，清理 {{models}} 个模型状态",
+    "reset_all_partial": "部分恢复：已恢复 {{count}} 个认证，清理 {{models}} 个模型状态。{{error}}",
     "reset_all_failed": "全部恢复失败",
     "models_count": "{{count}} 个模型"
   }

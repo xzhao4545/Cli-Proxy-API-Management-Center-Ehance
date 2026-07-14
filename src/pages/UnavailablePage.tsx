@@ -55,6 +55,43 @@ function getErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return null;
+}
+
+/** Extract partial reset-all progress from an ApiError body (HTTP 500 + status=partial). */
+function parsePartialResetAll(err: unknown): {
+  resetCount: number;
+  modelsCleared: number;
+  message: string;
+} | null {
+  if (!err || typeof err !== 'object') return null;
+  const candidate =
+    asRecord((err as { data?: unknown }).data) ||
+    asRecord((err as { details?: unknown }).details);
+  if (!candidate) return null;
+  if (asString(candidate.status) !== 'partial') return null;
+
+  const resetCount = asNumber(candidate.reset_count);
+  const modelsCleared = asNumber(candidate.models_cleared);
+  const message =
+    asString(candidate.error) ||
+    (err instanceof Error ? err.message : '') ||
+    '';
+  return { resetCount, modelsCleared, message };
+}
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function asNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
 function formatDateTime(value?: string): string {
   if (!value) return '-';
   const date = new Date(value);
@@ -556,7 +593,8 @@ export function UnavailablePage() {
   };
 
   const handleResetAll = () => {
-    const providerFilter = providerInput.trim();
+    // Scope must match the currently applied list filters, not dirty input text.
+    const providerFilter = applied.provider.trim();
     showConfirmation({
       title: t('unavailable.confirm_reset_all_title'),
       message: providerFilter
@@ -577,9 +615,22 @@ export function UnavailablePage() {
             }),
             'success'
           );
-          await applyAndLoad();
+          await loadItems(appliedRef.current);
         } catch (err: unknown) {
-          showNotification(getErrorMessage(err, t('unavailable.reset_all_failed')), 'error');
+          const partial = parsePartialResetAll(err);
+          if (partial) {
+            showNotification(
+              t('unavailable.reset_all_partial', {
+                count: partial.resetCount,
+                models: partial.modelsCleared,
+                error: partial.message || t('unavailable.reset_all_failed'),
+              }),
+              'warning'
+            );
+            await loadItems(appliedRef.current);
+          } else {
+            showNotification(getErrorMessage(err, t('unavailable.reset_all_failed')), 'error');
+          }
         } finally {
           setResettingKey('');
         }
@@ -835,6 +886,12 @@ export function UnavailablePage() {
                                       <EntryIdentity
                                         scope="model"
                                         name={modelEntry.model || '-'}
+                                        subtitle={
+                                          modelEntry.auth_index &&
+                                          modelEntry.auth_index !== authNode.label
+                                            ? modelEntry.auth_index
+                                            : undefined
+                                        }
                                       />
                                       <div className={styles.reasonCell}>
                                         {modelEntry.reason || modelEntry.status_message || '-'}
