@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -9,6 +9,14 @@ import { unavailableApi } from '@/services/api';
 import { useAuthStore, useNotificationStore } from '@/stores';
 import type { UnavailableEntry } from '@/types/unavailable';
 import styles from './UnavailablePage.module.scss';
+
+interface AppliedFilters {
+  provider: string;
+  authIndex: string;
+  model: string;
+  activeOnly: boolean;
+  includeNonBlocking: boolean;
+}
 
 function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message) return err.message;
@@ -38,14 +46,8 @@ function formatDuration(seconds: number): string {
   return remMins ? `${hours}h ${remMins}m` : `${hours}h`;
 }
 
-function entryKey(entry: UnavailableEntry, index: number): string {
-  return [
-    entry.scope,
-    entry.auth_index || entry.auth_id || '',
-    entry.model || '',
-    entry.next_retry_after || '',
-    String(index),
-  ].join('|');
+function entryKey(entry: UnavailableEntry): string {
+  return [entry.scope, entry.auth_index || entry.auth_id || '', entry.model || ''].join('|');
 }
 
 function displayAuth(entry: UnavailableEntry): string {
@@ -55,75 +57,118 @@ function displayAuth(entry: UnavailableEntry): string {
 export function UnavailablePage() {
   const { t } = useTranslation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
-  const { showNotification, showConfirmation, setConfirmationLoading, hideConfirmation } =
-    useNotificationStore();
+  const { showNotification, showConfirmation } = useNotificationStore();
 
   const [items, setItems] = useState<UnavailableEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [provider, setProvider] = useState('');
-  const [authIndex, setAuthIndex] = useState('');
-  const [model, setModel] = useState('');
-  const [activeOnly, setActiveOnly] = useState(true);
-  const [includeNonBlocking, setIncludeNonBlocking] = useState(false);
+  const [providerInput, setProviderInput] = useState('');
+  const [authIndexInput, setAuthIndexInput] = useState('');
+  const [modelInput, setModelInput] = useState('');
+  const [activeOnlyInput, setActiveOnlyInput] = useState(true);
+  const [includeNonBlockingInput, setIncludeNonBlockingInput] = useState(false);
+  const [applied, setApplied] = useState<AppliedFilters>({
+    provider: '',
+    authIndex: '',
+    model: '',
+    activeOnly: true,
+    includeNonBlocking: false,
+  });
   const [resettingKey, setResettingKey] = useState('');
 
   const disableControls = connectionStatus !== 'connected';
 
-  const loadItems = useCallback(async () => {
-    if (connectionStatus !== 'connected') {
-      setLoading(false);
-      return;
-    }
+  const loadItems = useCallback(
+    async (filters: AppliedFilters) => {
+      if (connectionStatus !== 'connected') {
+        setLoading(false);
+        return;
+      }
 
-    setLoading(true);
-    setError('');
-    try {
-      const data = await unavailableApi.list({
-        provider: provider.trim() || undefined,
-        auth_index: authIndex.trim() || undefined,
-        model: model.trim() || undefined,
-        active_only: activeOnly,
-        include_nonblocking: includeNonBlocking,
-      });
-      setItems(data.items);
-      setTotal(data.total);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, t('notification.refresh_failed')));
-      setItems([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    activeOnly,
-    authIndex,
-    connectionStatus,
-    includeNonBlocking,
-    model,
-    provider,
-    t,
-  ]);
+      setLoading(true);
+      setError('');
+      try {
+        const data = await unavailableApi.list({
+          provider: filters.provider || undefined,
+          auth_index: filters.authIndex || undefined,
+          model: filters.model || undefined,
+          active_only: filters.activeOnly,
+          include_nonblocking: filters.includeNonBlocking,
+        });
+        setItems(data.items);
+        setTotal(data.total);
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, t('notification.refresh_failed')));
+        setItems([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [connectionStatus, t]
+  );
 
-  useHeaderRefresh(loadItems);
+  const buildFiltersFromInputs = useCallback(
+    (): AppliedFilters => ({
+      provider: providerInput.trim(),
+      authIndex: authIndexInput.trim(),
+      model: modelInput.trim(),
+      activeOnly: activeOnlyInput,
+      includeNonBlocking: includeNonBlockingInput,
+    }),
+    [activeOnlyInput, authIndexInput, includeNonBlockingInput, modelInput, providerInput]
+  );
+
+  const applyAndLoad = useCallback(async () => {
+    const next = buildFiltersFromInputs();
+    setApplied(next);
+    await loadItems(next);
+  }, [buildFiltersFromInputs, loadItems]);
+
+  useHeaderRefresh(applyAndLoad);
 
   useEffect(() => {
-    void loadItems();
-  }, [loadItems]);
+    void loadItems(applied);
+  }, [applied, loadItems]);
 
   const providers = useMemo(() => {
-    const set = new Set<string>();
+    const values = new Set<string>();
     items.forEach((item) => {
-      if (item.provider) set.add(item.provider);
+      if (item.provider) values.add(item.provider);
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
   }, [items]);
 
   const blockingCount = useMemo(
     () => items.filter((item) => item.blocking).length,
     [items]
   );
+
+  const handleToggleActiveOnly = (checked: boolean) => {
+    setActiveOnlyInput(checked);
+    const next: AppliedFilters = {
+      ...buildFiltersFromInputs(),
+      activeOnly: checked,
+    };
+    setApplied(next);
+  };
+
+  const handleToggleIncludeNonBlocking = (checked: boolean) => {
+    setIncludeNonBlockingInput(checked);
+    const next: AppliedFilters = {
+      ...buildFiltersFromInputs(),
+      includeNonBlocking: checked,
+    };
+    setApplied(next);
+  };
+
+  const handleFilterKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void applyAndLoad();
+    }
+  };
 
   const handleResetEntry = (entry: UnavailableEntry) => {
     const auth = entry.auth_index?.trim();
@@ -133,7 +178,7 @@ export function UnavailablePage() {
     }
 
     const isModel = entry.scope === 'model' && Boolean(entry.model);
-    const key = entryKey(entry, 0);
+    const key = entryKey(entry);
 
     showConfirmation({
       title: t('unavailable.confirm_reset_title'),
@@ -146,7 +191,6 @@ export function UnavailablePage() {
       confirmText: t('unavailable.reset'),
       variant: 'primary',
       onConfirm: async () => {
-        setConfirmationLoading(true);
         setResettingKey(key);
         try {
           await unavailableApi.resetQuota({
@@ -154,15 +198,10 @@ export function UnavailablePage() {
             model: isModel ? entry.model : undefined,
           });
           showNotification(t('unavailable.reset_success'), 'success');
-          hideConfirmation();
-          await loadItems();
+          await loadItems(applied);
         } catch (err: unknown) {
-          showNotification(
-            getErrorMessage(err, t('unavailable.reset_failed')),
-            'error'
-          );
+          showNotification(getErrorMessage(err, t('unavailable.reset_failed')), 'error');
         } finally {
-          setConfirmationLoading(false);
           setResettingKey('');
         }
       },
@@ -170,7 +209,7 @@ export function UnavailablePage() {
   };
 
   const handleResetAll = () => {
-    const providerFilter = provider.trim();
+    const providerFilter = providerInput.trim();
     showConfirmation({
       title: t('unavailable.confirm_reset_all_title'),
       message: providerFilter
@@ -179,7 +218,6 @@ export function UnavailablePage() {
       confirmText: t('unavailable.reset_all'),
       variant: 'danger',
       onConfirm: async () => {
-        setConfirmationLoading(true);
         setResettingKey('all');
         try {
           const result = await unavailableApi.resetQuotaAll({
@@ -192,15 +230,10 @@ export function UnavailablePage() {
             }),
             'success'
           );
-          hideConfirmation();
-          await loadItems();
+          await applyAndLoad();
         } catch (err: unknown) {
-          showNotification(
-            getErrorMessage(err, t('unavailable.reset_all_failed')),
-            'error'
-          );
+          showNotification(getErrorMessage(err, t('unavailable.reset_all_failed')), 'error');
         } finally {
-          setConfirmationLoading(false);
           setResettingKey('');
         }
       },
@@ -222,8 +255,9 @@ export function UnavailablePage() {
               id="unavailable-provider"
               className={styles.textInput}
               list="unavailable-provider-options"
-              value={provider}
-              onChange={(event) => setProvider(event.target.value)}
+              value={providerInput}
+              onChange={(event) => setProviderInput(event.target.value)}
+              onKeyDown={handleFilterKeyDown}
               placeholder={t('unavailable.filter_provider_placeholder')}
               disabled={disableControls}
             />
@@ -239,8 +273,9 @@ export function UnavailablePage() {
             <input
               id="unavailable-auth-index"
               className={styles.textInput}
-              value={authIndex}
-              onChange={(event) => setAuthIndex(event.target.value)}
+              value={authIndexInput}
+              onChange={(event) => setAuthIndexInput(event.target.value)}
+              onKeyDown={handleFilterKeyDown}
               placeholder={t('unavailable.filter_auth_index_placeholder')}
               disabled={disableControls}
             />
@@ -251,8 +286,9 @@ export function UnavailablePage() {
             <input
               id="unavailable-model"
               className={styles.textInput}
-              value={model}
-              onChange={(event) => setModel(event.target.value)}
+              value={modelInput}
+              onChange={(event) => setModelInput(event.target.value)}
+              onKeyDown={handleFilterKeyDown}
               placeholder={t('unavailable.filter_model_placeholder')}
               disabled={disableControls}
             />
@@ -261,8 +297,8 @@ export function UnavailablePage() {
           <label className={styles.checkboxRow}>
             <input
               type="checkbox"
-              checked={activeOnly}
-              onChange={(event) => setActiveOnly(event.target.checked)}
+              checked={activeOnlyInput}
+              onChange={(event) => handleToggleActiveOnly(event.target.checked)}
               disabled={disableControls}
             />
             {t('unavailable.active_only')}
@@ -271,9 +307,9 @@ export function UnavailablePage() {
           <label className={styles.checkboxRow}>
             <input
               type="checkbox"
-              checked={includeNonBlocking}
-              onChange={(event) => setIncludeNonBlocking(event.target.checked)}
-              disabled={disableControls}
+              checked={includeNonBlockingInput}
+              onChange={(event) => handleToggleIncludeNonBlocking(event.target.checked)}
+              disabled={disableControls || activeOnlyInput}
             />
             {t('unavailable.include_nonblocking')}
           </label>
@@ -283,7 +319,7 @@ export function UnavailablePage() {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => void loadItems()}
+            onClick={() => void applyAndLoad()}
             disabled={disableControls || loading}
             loading={loading}
           >
@@ -351,8 +387,8 @@ export function UnavailablePage() {
                 </tr>
               ) : null}
 
-              {items.map((entry, index) => {
-                const key = entryKey(entry, index);
+              {items.map((entry) => {
+                const key = entryKey(entry);
                 const isResetting = resettingKey === key;
                 return (
                   <tr key={key}>
