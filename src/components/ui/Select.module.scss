@@ -116,3 +116,48 @@
 .optionHighlighted {
   background: var(--bg-secondary);
 }
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px 6px 28px;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.4;
+  outline: none;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &:focus {
+    border-color: var(--primary-color);
+    background: var(--bg-primary);
+  }
+}
+
+.noOptions {
+  padding: 10px 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}

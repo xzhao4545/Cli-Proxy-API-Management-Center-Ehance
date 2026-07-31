@@ -761,7 +761,9 @@
     "reasoning_effort": "Reasoning",
     "ttft": "TTFT",
     "ttft_ms": "ms",
-    "page_jump": "Page"
+    "page_jump": "Page",
+    "filter_search": "Type to filter",
+    "filter_no_match": "No matches"
   },
   "stats": {
     "success": "Success",

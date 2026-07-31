@@ -1002,6 +1002,9 @@ export function UsagePage() {
                         ariaLabel={t('usage.provider')}
                         fullWidth
                         size="sm"
+                        searchable
+                        searchPlaceholder={t('usage.filter_search', { defaultValue: 'Input to filter' })}
+                        noOptionsText={t('usage.filter_no_match', { defaultValue: 'No matches' })}
                       />
                     </FilterableTh>
                     <FilterableTh label={t('usage.model')} className={styles.thModel}>
@@ -1013,6 +1016,9 @@ export function UsagePage() {
                         ariaLabel={t('usage.model')}
                         fullWidth
                         size="sm"
+                        searchable
+                        searchPlaceholder={t('usage.filter_search', { defaultValue: 'Input to filter' })}
+                        noOptionsText={t('usage.filter_no_match', { defaultValue: 'No matches' })}
                       />
                     </FilterableTh>
                     <FilterableTh label={t('usage.client_model')} className={styles.thModel}>
@@ -1024,6 +1030,9 @@ export function UsagePage() {
                         ariaLabel={t('usage.client_model')}
                         fullWidth
                         size="sm"
+                        searchable
+                        searchPlaceholder={t('usage.filter_search', { defaultValue: 'Input to filter' })}
+                        noOptionsText={t('usage.filter_no_match', { defaultValue: 'No matches' })}
                       />
                     </FilterableTh>
                     <FilterableTh label={t('usage.response_model')} className={styles.thModel}>
@@ -1035,6 +1044,9 @@ export function UsagePage() {
                         ariaLabel={t('usage.response_model')}
                         fullWidth
                         size="sm"
+                        searchable
+                        searchPlaceholder={t('usage.filter_search', { defaultValue: 'Input to filter' })}
+                        noOptionsText={t('usage.filter_no_match', { defaultValue: 'No matches' })}
                       />
                     </FilterableTh>
                     <FilterableTh label={t('usage.auth_type')} className={styles.thAuth}>

@@ -785,7 +785,9 @@
     "reasoning_effort": "推理強度",
     "ttft": "首Token",
     "ttft_ms": "毫秒",
-    "page_jump": "跳頁"
+    "page_jump": "跳頁",
+    "filter_search": "輸入篩選",
+    "filter_no_match": "無符合項目"
   },
   "stats": {
     "success": "成功",

@@ -9,7 +9,7 @@ import {
   type CSSProperties
 } from 'react';
 import { createPortal } from 'react-dom';
-import { IconChevronDown } from './icons';
+import { IconChevronDown, IconSearch } from './icons';
 import styles from './Select.module.scss';
 
 export interface SelectOption {
@@ -30,6 +30,12 @@ interface SelectProps {
   fullWidth?: boolean;
   size?: 'sm' | 'md';
   id?: string;
+  /** Show a search input inside the dropdown and filter options by it. */
+  searchable?: boolean;
+  /** Placeholder shown in the dropdown search input. Defaults to ariaLabel or 'Filter…'. */
+  searchPlaceholder?: string;
+  /** Rendered when the search term matches no options. Defaults to 'No matches'. */
+  noOptionsText?: string;
 }
 
 const VIEWPORT_MARGIN = 8;
@@ -90,14 +96,20 @@ export function Select({
   fullWidth = true,
   size = 'md',
   id,
+  searchable = false,
+  searchPlaceholder,
+  noOptionsText,
 }: SelectProps) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
   const listboxId = `${selectId}-listbox`;
+  const searchInputId = `${selectId}-search`;
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [searchText, setSearchText] = useState('');
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties | null>(null);
   const isOpen = open && !disabled;
@@ -170,31 +182,68 @@ export function Select({
   }, [isOpen, scheduleDropdownStyleUpdate, updateDropdownStyle]);
 
   const selectedIndex = useMemo(() => options.findIndex((option) => option.value === value), [options, value]);
+  const trimmedSearch = searchable ? searchText.trim().toLocaleLowerCase() : '';
+  const visibleOptions = useMemo(() => {
+    if (trimmedSearch === '') return options.slice();
+    return options.filter(
+      (option) =>
+        option.label.toLocaleLowerCase().includes(trimmedSearch) ||
+        option.value.toLocaleLowerCase().includes(trimmedSearch)
+    );
+  }, [options, trimmedSearch]);
+  const visibleSelectedIndex = useMemo(
+    () => visibleOptions.findIndex((option) => option.value === value),
+    [visibleOptions, value]
+  );
   const resolvedHighlightedIndex =
-    highlightedIndex >= 0 ? highlightedIndex : selectedIndex >= 0 ? selectedIndex : options.length > 0 ? 0 : -1;
+    highlightedIndex >= 0
+      ? (highlightedIndex < visibleOptions.length ? highlightedIndex : visibleOptions.length - 1)
+      : visibleSelectedIndex >= 0
+        ? visibleSelectedIndex
+        : visibleOptions.length > 0
+          ? 0
+          : -1;
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined;
   const displayText = selected?.label ?? placeholder ?? '';
   const isPlaceholder = !selected && placeholder;
 
   const commitSelection = useCallback(
     (nextIndex: number) => {
-      const nextOption = options[nextIndex];
+      const nextOption = visibleOptions[nextIndex];
       if (!nextOption) return;
       onChange(nextOption.value);
       setOpen(false);
+      setSearchText('');
       setHighlightedIndex(nextIndex);
     },
-    [onChange, options]
+    [onChange, visibleOptions]
   );
 
   const moveHighlight = useCallback(
     (direction: 1 | -1) => {
-      if (options.length === 0) return;
-      const nextIndex = (resolvedHighlightedIndex + direction + options.length) % options.length;
+      const count = visibleOptions.length;
+      if (count === 0) return;
+      const nextIndex = (resolvedHighlightedIndex + direction + count) % count;
       setHighlightedIndex(nextIndex);
     },
-    [options.length, resolvedHighlightedIndex]
+    [visibleOptions.length, resolvedHighlightedIndex]
   );
+
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(event.target.value);
+    setHighlightedIndex(0);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchText('');
+      return;
+    }
+    if (searchable) {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }
+  }, [isOpen, searchable]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -218,14 +267,17 @@ export function Select({
           moveHighlight(-1);
           return;
         case 'Home':
-          if (!isOpen || options.length === 0) return;
+          if (!isOpen || visibleOptions.length === 0) return;
+          // In searchable mode Home/End edit the search text.
+          if (searchable) return;
           event.preventDefault();
           setHighlightedIndex(0);
           return;
         case 'End':
-          if (!isOpen || options.length === 0) return;
+          if (!isOpen || visibleOptions.length === 0) return;
+          if (searchable) return;
           event.preventDefault();
-          setHighlightedIndex(options.length - 1);
+          setHighlightedIndex(visibleOptions.length - 1);
           return;
         case 'Enter':
         case ' ': {
@@ -243,15 +295,28 @@ export function Select({
           if (!isOpen) return;
           event.preventDefault();
           setOpen(false);
+          setSearchText('');
           return;
         case 'Tab':
-          if (isOpen) setOpen(false);
+          if (isOpen) {
+            setOpen(false);
+            setSearchText('');
+          }
           return;
         default:
           return;
       }
     },
-    [commitSelection, disabled, isOpen, moveHighlight, options.length, resolvedHighlightedIndex]
+    [commitSelection, disabled, isOpen, moveHighlight, searchable, visibleOptions.length, resolvedHighlightedIndex]
+  );
+
+  const handleSearchKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      // Let text editing keys (incl. Space) reach the input; keep Arrow/Home/End/Enter/Escape.
+      if (event.key === ' ') return;
+      handleKeyDown(event as unknown as React.KeyboardEvent<HTMLButtonElement>);
+    },
+    [handleKeyDown]
   );
 
   useEffect(() => {
@@ -259,6 +324,9 @@ export function Select({
     const highlightedOption = document.getElementById(`${selectId}-option-${resolvedHighlightedIndex}`);
     highlightedOption?.scrollIntoView({ block: 'nearest' });
   }, [isOpen, resolvedHighlightedIndex, selectId]);
+
+  const searchPlaceholderText = searchPlaceholder ?? ariaLabel ?? 'Filter…';
+  const noOptionsLabel = noOptionsText ?? 'No matches';
 
   const dropdown =
     isOpen && dropdownStyle
@@ -271,25 +339,49 @@ export function Select({
             aria-label={ariaLabel}
             style={dropdownStyle}
           >
-            {options.map((opt, index) => {
-              const active = opt.value === value;
-              const highlighted = index === resolvedHighlightedIndex;
-              return (
-                <button
-                  key={opt.value}
-                  id={`${selectId}-option-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  className={`${styles.option} ${active ? styles.optionActive : ''} ${highlighted ? styles.optionHighlighted : ''}`.trim()}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  onKeyDown={handleKeyDown}
-                  onClick={() => commitSelection(index)}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+            {searchable ? (
+              <div className={styles.searchWrap}>
+                <IconSearch size={13} className={styles.searchIcon} aria-hidden="true" />
+                <input
+                  ref={searchInputRef}
+                  id={searchInputId}
+                  type="text"
+                  className={styles.searchInput}
+                  value={searchText}
+                  placeholder={searchPlaceholderText}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-label={searchPlaceholderText}
+                />
+              </div>
+            ) : null}
+            {visibleOptions.length > 0 ? (
+              visibleOptions.map((opt, index) => {
+                const active = opt.value === value;
+                const highlighted = index === resolvedHighlightedIndex;
+                return (
+                  <button
+                    key={opt.value}
+                    id={`${selectId}-option-${index}`}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    className={`${styles.option} ${active ? styles.optionActive : ''} ${highlighted ? styles.optionHighlighted : ''}`.trim()}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    onKeyDown={handleKeyDown}
+                    onClick={() => commitSelection(index)}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })
+            ) : (
+              <div className={styles.noOptions} role="status">
+                {noOptionsLabel}
+              </div>
+            )}
           </div>
         )
       : null;
