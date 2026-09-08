@@ -24,6 +24,7 @@ export interface UsageEvent {
   completion_tokens: number;
   total_tokens: number;
   reasoning_tokens: number;
+  reasoning_tokens_present?: boolean;
   reasoning_effort?: string;
   cached_tokens: number;
   ttft_ms?: number;

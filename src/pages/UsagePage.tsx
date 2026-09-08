@@ -296,7 +296,7 @@ function TokenPopover({
           <span>{t('usage.token_completion')}</span><span>{event.completion_tokens.toLocaleString()}</span>
         </div>
         <div className={styles.tokenPopoverRow}>
-          <span>{t('usage.token_reasoning')}</span><span>{event.reasoning_tokens.toLocaleString()}</span>
+          <span>{t('usage.token_reasoning')}</span><span>{event.reasoning_tokens_present ? event.reasoning_tokens.toLocaleString() : '-'}</span>
         </div>
         <div className={styles.tokenPopoverRow}>
           <span>{t('usage.token_cached')}</span><span>{event.cached_tokens.toLocaleString()}</span>
@@ -569,6 +569,9 @@ function ProviderBreakdownCard({
         <span className={`${styles.providerStatPill} ${styles.providerStatFail}`}>
           {t('stats.failure')}: {provider.failed_requests}
         </span>
+        <span className={styles.providerCacheHitRate}>
+          {t('usage.success_rate')}: {successPct}%
+        </span>
       </div>
       <div className={styles.providerBreakdownBar}>
         <div
@@ -577,7 +580,7 @@ function ProviderBreakdownCard({
         />
       </div>
       <span className={styles.providerBreakdownRate}>
-        {successPct}% · {provider.requests} req · {provider.tokens.toLocaleString()} tok
+        {provider.requests} req · {formatLargeTokenCount(provider.tokens)} tok
       </span>
     </div>
   );
