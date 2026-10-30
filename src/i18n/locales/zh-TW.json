@@ -984,6 +984,8 @@
           "beta_features": "Beta Features"
         },
         "network": {
+          "upstream_4xx_to_502": "上游 4xx 轉為 502",
+          "upstream_4xx_to_502_desc": "將上游 4xx 錯誤統一以 502 回傳給用戶端，用量統計仍記錄上游真實狀態碼",
           "title": "網路設定",
           "description": "代理、重試和路由設定",
           "proxy_url": "代理 URL",

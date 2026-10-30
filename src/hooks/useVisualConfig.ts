@@ -789,6 +789,7 @@ function getNextDirtyFields(
       'usageSqliteEnabled',
       'redisUsageQueueRetentionSeconds',
       'passthroughHeaders',
+      'upstream4xxTo502',
       'disableCooling',
       'disableImageGeneration',
       'authAutoRefreshWorkers',
@@ -1104,6 +1105,7 @@ export function useVisualConfig() {
         proxyUrl: typeof parsed['proxy-url'] === 'string' ? parsed['proxy-url'] : '',
         forceModelPrefix: Boolean(parsed['force-model-prefix']),
         passthroughHeaders: Boolean(parsed['passthrough-headers']),
+        upstream4xxTo502: Boolean(parsed['upstream-4xx-to-502']),
         requestRetry: String(parsed['request-retry'] ?? ''),
         maxRetryCredentials: String(parsed['max-retry-credentials'] ?? ''),
         maxRetryInterval: String(parsed['max-retry-interval'] ?? ''),
@@ -1274,6 +1276,7 @@ export function useVisualConfig() {
         setStringInDoc(doc, ['proxy-url'], values.proxyUrl);
         setBooleanInDoc(doc, ['force-model-prefix'], values.forceModelPrefix);
         setBooleanInDoc(doc, ['passthrough-headers'], values.passthroughHeaders);
+        setBooleanInDoc(doc, ['upstream-4xx-to-502'], values.upstream4xxTo502);
         setIntFromStringInDoc(doc, ['request-retry'], values.requestRetry);
         setIntFromStringInDoc(doc, ['max-retry-credentials'], values.maxRetryCredentials);
         setIntFromStringInDoc(doc, ['max-retry-interval'], values.maxRetryInterval);

@@ -960,6 +960,8 @@
           "beta_features": "Beta Features"
         },
         "network": {
+          "upstream_4xx_to_502": "Return 502 for upstream 4xx",
+          "upstream_4xx_to_502_desc": "Replace upstream 4xx statuses with 502. Usage statistics keep the actual upstream status.",
           "title": "Network Configuration",
           "description": "Proxy, retry, and routing settings",
           "proxy_url": "Proxy URL",

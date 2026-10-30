@@ -99,6 +99,7 @@ export type VisualConfigValues = {
   proxyUrl: string;
   forceModelPrefix: boolean;
   passthroughHeaders: boolean;
+  upstream4xxTo502: boolean;
   requestRetry: string;
   maxRetryCredentials: string;
   maxRetryInterval: string;
@@ -161,6 +162,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   proxyUrl: '',
   forceModelPrefix: false,
   passthroughHeaders: false,
+  upstream4xxTo502: false,
   requestRetry: '',
   maxRetryCredentials: '',
   maxRetryInterval: '',

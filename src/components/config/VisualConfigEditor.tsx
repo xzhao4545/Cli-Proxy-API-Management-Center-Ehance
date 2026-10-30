@@ -43,7 +43,14 @@ import {
 } from './VisualConfigEditorBlocks';
 import styles from './VisualConfigEditor.module.scss';
 
-type VisualSectionId = 'server' | 'auth' | 'system' | 'quota' | 'streaming' | 'keywordFilters' | 'payload';
+type VisualSectionId =
+  | 'server'
+  | 'auth'
+  | 'system'
+  | 'quota'
+  | 'streaming'
+  | 'keywordFilters'
+  | 'payload';
 
 type VisualSection = {
   id: VisualSectionId;
@@ -971,6 +978,15 @@ export function VisualConfigEditor({
                       checked={values.passthroughHeaders}
                       disabled={disabled}
                       onChange={(passthroughHeaders) => onChange({ passthroughHeaders })}
+                    />
+                    <ToggleRow
+                      title={t('config_management.visual.sections.network.upstream_4xx_to_502')}
+                      description={t(
+                        'config_management.visual.sections.network.upstream_4xx_to_502_desc'
+                      )}
+                      checked={values.upstream4xxTo502}
+                      disabled={disabled}
+                      onChange={(upstream4xxTo502) => onChange({ upstream4xxTo502 })}
                     />
                     <ToggleRow
                       title={t('config_management.visual.sections.network.disable_cooling')}
