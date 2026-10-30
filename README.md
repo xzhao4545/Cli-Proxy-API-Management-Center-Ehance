@@ -2,6 +2,8 @@
 
 A single-file Web UI (React + TypeScript) for operating and troubleshooting the **CLI Proxy API** via its **Management API** (config, credentials, and logs).
 
+Current release: **0.3.3** (Git tag `v0.3.3`). The upstream 4xx-to-502 setting requires CLIProxyAPI-Enhance **0.3.7** or later.
+
 [中文文档](README_CN.md)
 
 **Main Project**: https://github.com/router-for-me/CLIProxyAPI  
