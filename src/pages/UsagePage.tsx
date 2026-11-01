@@ -569,9 +569,6 @@ function ProviderBreakdownCard({
         <span className={`${styles.providerStatPill} ${styles.providerStatFail}`}>
           {t('stats.failure')}: {provider.failed_requests}
         </span>
-        <span className={styles.providerCacheHitRate}>
-          {t('usage.success_rate')}: {successPct}%
-        </span>
       </div>
       <div className={styles.providerBreakdownBar}>
         <div
@@ -580,7 +577,7 @@ function ProviderBreakdownCard({
         />
       </div>
       <span className={styles.providerBreakdownRate}>
-        {provider.requests} req · {formatLargeTokenCount(provider.tokens)} tok
+        {t('usage.success_rate')}: {successPct}% · {provider.requests} req · {formatLargeTokenCount(provider.tokens)} tok
       </span>
     </div>
   );
