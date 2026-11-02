@@ -1,0 +1,295 @@
+@use '../../../styles/mixins' as *;
+
+/* ============================================================
+ * 额度卡片 body 的全页外衣（类型化契约见 features/quota/types.ts）。
+ *
+ * 1. 额度行 / 水位条 / Antigravity 分组 —— mono 遥测风，与紧凑外衣同族；
+ * 2. 套餐 chip 行 —— 朴素文字。档位由卡面表达（QuotaCard.module.scss），
+ *    这里的高档套餐名只换成卡面提供的强调色（--quota-plan-accent）。
+ * ============================================================ */
+
+/* ---------- 额度行 ---------- */
+
+.quotaRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.quotaRowHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.quotaModel {
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  @include text-ellipsis;
+}
+
+/* 遥测：mono + 等宽数字，刷新时数字不跳位 */
+.quotaMeta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-shrink: 0;
+  font-family: $font-mono;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* 百分比穿墨色而非填充色 —— 文字不承担状态编码，颜色留给水位条 */
+.quotaPercent {
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.quotaReset {
+  color: var(--text-quaternary);
+}
+
+/* Countdown beside the absolute reset time. The separator is a pseudo-element
+   so the two spans stay independently styleable (the relative half turns
+   warning-coloured when this is the row that recovers first). */
+.quotaResetRelative {
+  color: var(--text-tertiary);
+
+  &::before {
+    content: '·';
+    margin: 0 4px;
+    color: var(--text-quaternary);
+  }
+}
+
+.quotaResetRelativeSoon {
+  color: var(--warning-text);
+  font-weight: 600;
+}
+
+.quotaAmount {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.quotaMessage {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 6px 4px;
+}
+
+/* ---------- 水位条（QuotaMeter）----------
+ * 轨道退居背景（8% 墨色），填充按剩余量三档着色；
+ * percent === null 时宽度为 0 —— 未知不着色。 */
+
+.quotaBar {
+  height: 6px;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  overflow: hidden;
+}
+
+.quotaBarFill {
+  height: 100%;
+  border-radius: $radius-full;
+  /* 刷新时平滑重定向到新水位（可中断） */
+  transition: width 360ms var(--ease-out-strong, ease);
+  /* 数据到达是本页的高潮时刻：水位逐行铺开（每行 40ms 级差）。
+   * 走 scaleX 而非 width，避免与上面的 width 过渡互相抢夺同一属性。 */
+  transform-origin: left center;
+  animation: quota-meter-fill 480ms var(--ease-out-strong, ease-out) both;
+  animation-delay: calc(var(--meter-index, 0) * 40ms);
+}
+
+@keyframes quota-meter-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.quotaBarFillHigh {
+  background: var(--viz-success);
+}
+
+.quotaBarFillMedium {
+  background: var(--quota-medium-color);
+}
+
+.quotaBarFillLow {
+  background: var(--viz-failure);
+}
+
+/* ---------- Antigravity 分组 ---------- */
+
+.antigravityQuotaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  & + & {
+    margin-top: 3px;
+    padding-top: 9px;
+    border-top: 1px dashed color-mix(in srgb, var(--border-color) 80%, transparent);
+  }
+}
+
+.antigravityQuotaGroupHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.antigravityQuotaGroupTitle {
+  font-family: $font-mono;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.antigravityQuotaGroupDescription {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-quaternary);
+}
+
+@include mobile {
+  .quotaRowHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .quotaModel {
+    width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quotaBarFill {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ---------- 套餐 chip 行 ---------- */
+
+.codexPlan {
+  display: flex;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.codexPlanItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.codexPlanLabel {
+  color: var(--text-tertiary);
+  flex: 0 0 auto;
+}
+
+.codexPlanValue {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  min-width: 0;
+}
+
+.codexResetCredits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.codexResetCreditsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.codexResetCreditRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px $spacing-sm;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  border-radius: $radius-sm;
+  background-color: color-mix(in srgb, var(--bg-secondary) 72%, transparent);
+  font-size: 12px;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.codexResetCreditRowSoon {
+  border-color: var(--warning-border);
+  background-color: var(--warning-bg);
+}
+
+.codexResetCreditLabel {
+  color: var(--text-tertiary);
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.codexResetCreditTime {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.codexResetCreditsError {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--warning-text);
+  background-color: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: $radius-sm;
+  padding: $spacing-xs $spacing-sm;
+}
+
+.codexPlanSeparator {
+  width: 1px;
+  height: 12px;
+  background-color: var(--border-color);
+}
+
+.premiumPlanValue,
+.elitePlanValue {
+  font-weight: 600;
+  color: var(--quota-plan-accent, var(--text-primary));
+  white-space: nowrap;
+  min-width: 0;
+}

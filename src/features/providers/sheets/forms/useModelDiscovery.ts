@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { modelsApi } from '@/services/api';
 import { buildHeaderObject } from '@/utils/headers';
+import { getErrorMessage } from '@/utils/helpers';
 import type { ModelInfo } from '@/utils/models';
 import type { ApiKeyEntryInput, ProviderBrand } from '../../types';
 
 export const MODEL_DISCOVERY_BRANDS: ReadonlyArray<ProviderBrand> = [
   'gemini',
+  'interactions',
   'codex',
+  'meta',
+  'xai',
   'claude',
   'openaiCompatibility',
 ];
@@ -14,32 +18,10 @@ export const MODEL_DISCOVERY_BRANDS: ReadonlyArray<ProviderBrand> = [
 export const isModelDiscoveryBrand = (brand: ProviderBrand): boolean =>
   MODEL_DISCOVERY_BRANDS.includes(brand);
 
-const parseHeadersText = (text: string): Record<string, string> => {
-  const out: Record<string, string> = {};
-  String(text ?? '')
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .forEach((line) => {
-      const sep = line.indexOf(':');
-      if (sep <= 0) return;
-      const key = line.slice(0, sep).trim();
-      const value = line.slice(sep + 1).trim();
-      if (!key) return;
-      out[key] = value;
-    });
-  return out;
-};
-
-const toErrorMessage = (err: unknown): string => {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  return '';
-};
-
 export interface UseModelDiscoveryArgs {
   brand: ProviderBrand;
   baseUrl: string;
+  proxyUrl?: string;
   formHeaders: Array<{ key: string; value: string }>;
   apiKeyEntries?: ApiKeyEntryInput[];
   apiKey?: string;
@@ -57,12 +39,11 @@ export interface UseModelDiscoveryResult {
   reset: () => void;
 }
 
-export function useModelDiscovery(
-  args: UseModelDiscoveryArgs
-): UseModelDiscoveryResult {
+export function useModelDiscovery(args: UseModelDiscoveryArgs): UseModelDiscoveryResult {
   const {
     brand,
     baseUrl,
+    proxyUrl,
     formHeaders,
     apiKeyEntries,
     apiKey,
@@ -84,21 +65,23 @@ export function useModelDiscovery(
       const baseHeaders = buildHeaderObject(formHeaders);
       const resolvedAuthIndex = (authIndex ?? '').trim() || undefined;
       let next: ModelInfo[] = [];
-      if (brand === 'gemini') {
+      if (brand === 'gemini' || brand === 'interactions') {
         const key = (apiKey ?? '').trim() || (fallbackApiKey ?? '').trim();
         next = await modelsApi.fetchGeminiModelsViaApiCall(
           baseUrl,
           key,
           baseHeaders,
-          resolvedAuthIndex
+          resolvedAuthIndex,
+          proxyUrl
         );
-      } else if (brand === 'codex') {
+      } else if (brand === 'codex' || brand === 'meta' || brand === 'xai') {
         const key = (apiKey ?? '').trim() || (fallbackApiKey ?? '').trim();
         next = await modelsApi.fetchV1ModelsViaApiCall(
           baseUrl,
           key,
           baseHeaders,
-          resolvedAuthIndex
+          resolvedAuthIndex,
+          proxyUrl
         );
       } else if (brand === 'claude') {
         const key = (apiKey ?? '').trim() || (fallbackApiKey ?? '').trim();
@@ -106,30 +89,37 @@ export function useModelDiscovery(
           baseUrl,
           key,
           baseHeaders,
-          resolvedAuthIndex
+          resolvedAuthIndex,
+          proxyUrl
         );
       } else if (brand === 'openaiCompatibility') {
-        const firstEntry = (apiKeyEntries ?? []).find((e) =>
-          (e.apiKey ?? '').trim() || (e.authIndex ?? '').trim()
+        const firstEntry = (apiKeyEntries ?? []).find(
+          (e) =>
+            (e.apiKey ?? '').trim() || (e.existingApiKey ?? '').trim() || (e.authIndex ?? '').trim()
         );
-        const entryKey = (firstEntry?.apiKey ?? '').trim();
-        const entryAuthIndex =
-          (firstEntry?.authIndex ?? '').trim() || resolvedAuthIndex;
-        const entryHeaders = parseHeadersText(firstEntry?.headersText ?? '');
-        const headers = { ...baseHeaders, ...entryHeaders };
+        const entryKey =
+          (firstEntry?.apiKey ?? '').trim() || (firstEntry?.existingApiKey ?? '').trim();
+        const entryAuthIndex = (firstEntry?.authIndex ?? '').trim() || resolvedAuthIndex;
         try {
           next = await modelsApi.fetchModelsViaApiCall(
             baseUrl,
             entryKey,
-            headers,
-            entryAuthIndex
+            baseHeaders,
+            entryAuthIndex,
+            firstEntry?.proxyUrl
           );
         } catch (firstErr) {
           // Some OpenAI-compatible endpoints expose /models without auth, or
           // reject the configured key for the discovery route. Retry once
           // without any auth/headers before surfacing the original error.
           try {
-            next = await modelsApi.fetchModelsViaApiCall(baseUrl);
+            next = await modelsApi.fetchModelsViaApiCall(
+              baseUrl,
+              undefined,
+              undefined,
+              undefined,
+              firstEntry?.proxyUrl
+            );
           } catch {
             throw firstErr;
           }
@@ -139,7 +129,7 @@ export function useModelDiscovery(
       setHasFetched(true);
     } catch (err) {
       setModels([]);
-      setError(toErrorMessage(err) || 'Failed to fetch models');
+      setError(getErrorMessage(err) || 'Failed to fetch models');
       setHasFetched(true);
     } finally {
       setLoading(false);
@@ -153,6 +143,7 @@ export function useModelDiscovery(
     brand,
     fallbackApiKey,
     formHeaders,
+    proxyUrl,
   ]);
 
   const reset = useCallback(() => {
@@ -163,21 +154,23 @@ export function useModelDiscovery(
   }, []);
 
   const inputSignature = useMemo(() => {
-    const headerSig = formHeaders
-      .map((h) => `${h.key}:${h.value}`)
-      .join('|');
+    const headerSig = formHeaders.map((h) => `${h.key}:${h.value}`).join('|');
     const entriesSig = (apiKeyEntries ?? [])
-      .map((e) => `${e.apiKey ?? ''}::${e.authIndex ?? ''}::${e.headersText ?? ''}`)
+      .map(
+        (e) =>
+          `${e.apiKey ?? ''}::${e.existingApiKey ?? ''}::${e.authIndex ?? ''}::${e.proxyUrl ?? ''}`
+      )
       .join('|');
     return [
       baseUrl,
+      proxyUrl ?? '',
       apiKey ?? '',
       fallbackApiKey ?? '',
       authIndex ?? '',
       headerSig,
       entriesSig,
     ].join('||');
-  }, [apiKey, apiKeyEntries, authIndex, baseUrl, fallbackApiKey, formHeaders]);
+  }, [apiKey, apiKeyEntries, authIndex, baseUrl, fallbackApiKey, formHeaders, proxyUrl]);
 
   const lastSignatureRef = useRef(inputSignature);
   useEffect(() => {

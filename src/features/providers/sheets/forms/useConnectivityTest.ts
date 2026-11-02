@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiCallApi, getApiCallErrorMessage } from '@/services/api';
 import {
+  buildCodexResponsesEndpoint,
   buildClaudeMessagesEndpoint,
+  buildGeminiGenerateContentEndpoint,
+  buildInteractionsEndpoint,
+  buildInteractionsProbePayload,
+  INTERACTIONS_API_REVISION,
   buildOpenAIChatCompletionsEndpoint,
 } from '@/components/providers/utils';
 import { buildHeaderObject, hasHeader } from '@/utils/headers';
-import type {
-  ApiKeyEntryInput,
-  ModelEntryInput,
-  ProviderBrand,
-} from '../../types';
+import { getErrorMessage } from '@/utils/helpers';
+import type { ApiKeyEntryInput, ModelEntryInput, ProviderBrand } from '../../types';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_ANTHROPIC_VERSION = '2023-06-01';
@@ -23,16 +25,19 @@ export interface ConnectivityStatus {
 
 const IDLE: ConnectivityStatus = { state: 'idle', message: '' };
 
-const errorMessage = (err: unknown): string => {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  return '';
+const requestFailureMessage = (err: unknown, messages: ConnectivityErrorMessages): string => {
+  const raw = getErrorMessage(err);
+  const isTimeout =
+    (typeof err === 'object' &&
+      err !== null &&
+      'code' in err &&
+      String((err as { code?: string }).code) === 'ECONNABORTED') ||
+    raw.toLowerCase().includes('timeout');
+
+  return isTimeout ? messages.timeout(DEFAULT_TIMEOUT_MS / 1000) : raw || messages.requestFailed;
 };
 
-const pickModel = (
-  testModel: string | undefined,
-  models: ModelEntryInput[]
-): string => {
+const pickModel = (testModel: string | undefined, models: ModelEntryInput[]): string => {
   const trimmed = (testModel ?? '').trim();
   if (trimmed) return trimmed;
   for (const m of models) {
@@ -42,27 +47,8 @@ const pickModel = (
   return '';
 };
 
-const parseHeadersText = (text: string): Record<string, string> => {
-  const out: Record<string, string> = {};
-  String(text ?? '')
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .forEach((line) => {
-      const sep = line.indexOf(':');
-      if (sep <= 0) return;
-      const key = line.slice(0, sep).trim();
-      const value = line.slice(sep + 1).trim();
-      if (!key) return;
-      out[key] = value;
-    });
-  return out;
-};
-
 const resolveBearerToken = (headers: Record<string, string>): string => {
-  const auth = Object.entries(headers).find(
-    ([k]) => k.toLowerCase() === 'authorization'
-  )?.[1];
+  const auth = Object.entries(headers).find(([k]) => k.toLowerCase() === 'authorization')?.[1];
   if (!auth) return '';
   const match = String(auth).match(/^Bearer\s+(.+)$/i);
   return match ? match[1].trim() : '';
@@ -71,6 +57,7 @@ const resolveBearerToken = (headers: Record<string, string>): string => {
 export interface UseConnectivityTestArgs {
   brand: ProviderBrand;
   baseUrl: string;
+  proxyUrl?: string;
   testModel?: string;
   models: ModelEntryInput[];
   formHeaders: Array<{ key: string; value: string }>;
@@ -91,10 +78,14 @@ export interface ConnectivityErrorMessages {
 
 export interface UseConnectivityTestResult {
   openaiStatuses: ConnectivityStatus[];
+  codexStatus: ConnectivityStatus;
+  geminiStatus: ConnectivityStatus;
   claudeStatus: ConnectivityStatus;
   isTestingAny: boolean;
   runOpenAIKey: (idx: number) => Promise<boolean>;
   runOpenAIAllKeys: () => Promise<void>;
+  runCodex: () => Promise<void>;
+  runGemini: () => Promise<void>;
   runClaude: () => Promise<void>;
 }
 
@@ -105,6 +96,7 @@ export function useConnectivityTest(
   const {
     brand,
     baseUrl,
+    proxyUrl,
     testModel,
     models,
     formHeaders,
@@ -116,22 +108,23 @@ export function useConnectivityTest(
 
   const entriesCount = apiKeyEntries?.length ?? 0;
 
-  const [openaiStatuses, setOpenaiStatuses] = useState<ConnectivityStatus[]>(
-    () => Array.from({ length: entriesCount }, () => IDLE)
+  const [openaiStatuses, setOpenaiStatuses] = useState<ConnectivityStatus[]>(() =>
+    Array.from({ length: entriesCount }, () => IDLE)
   );
+  const [codexStatus, setCodexStatus] = useState<ConnectivityStatus>(IDLE);
+  const [geminiStatus, setGeminiStatus] = useState<ConnectivityStatus>(IDLE);
   const [claudeStatus, setClaudeStatus] = useState<ConnectivityStatus>(IDLE);
   const [inFlight, setInFlight] = useState(0);
 
   const entrySignatures = useMemo(
     () =>
-      (apiKeyEntries ?? []).map(
-        (entry) =>
-          [
-            entry.apiKey ?? '',
-            entry.authIndex ?? '',
-            entry.proxyUrl ?? '',
-            entry.headersText ?? '',
-          ].join('||')
+      (apiKeyEntries ?? []).map((entry) =>
+        [
+          entry.apiKey ?? '',
+          entry.existingApiKey ?? '',
+          entry.authIndex ?? '',
+          entry.proxyUrl ?? '',
+        ].join('||')
       ),
     [apiKeyEntries]
   );
@@ -160,27 +153,35 @@ export function useConnectivityTest(
   const signature = useMemo(() => {
     const h = formHeaders.map((it) => `${it.key}:${it.value}`).join('|');
     const m = models.map((it) => `${it.name}:${it.alias ?? ''}`).join('|');
-    return `${baseUrl}||${(testModel ?? '').trim()}||${h}||${m}`;
-  }, [baseUrl, testModel, formHeaders, models]);
+    return [
+      baseUrl,
+      proxyUrl ?? '',
+      (testModel ?? '').trim(),
+      apiKey ?? '',
+      fallbackApiKey ?? '',
+      authIndex ?? '',
+      h,
+      m,
+    ].join('||');
+  }, [apiKey, authIndex, baseUrl, proxyUrl, fallbackApiKey, testModel, formHeaders, models]);
 
   const lastSignatureRef = useRef(signature);
   useEffect(() => {
     if (lastSignatureRef.current === signature) return;
     lastSignatureRef.current = signature;
     setOpenaiStatuses((prev) => prev.map(() => IDLE));
+    setCodexStatus(IDLE);
+    setGeminiStatus(IDLE);
     setClaudeStatus(IDLE);
   }, [signature]);
 
-  const updateOpenaiStatus = useCallback(
-    (idx: number, value: ConnectivityStatus) => {
-      setOpenaiStatuses((prev) => {
-        const next = [...prev];
-        next[idx] = value;
-        return next;
-      });
-    },
-    []
-  );
+  const updateOpenaiStatus = useCallback((idx: number, value: ConnectivityStatus) => {
+    setOpenaiStatuses((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  }, []);
 
   const runOpenAIKey = useCallback(
     async (idx: number): Promise<boolean> => {
@@ -203,7 +204,7 @@ export function useConnectivityTest(
         return false;
       }
       const entry = apiKeyEntries?.[idx];
-      const entryKey = (entry?.apiKey ?? '').trim();
+      const entryKey = (entry?.apiKey ?? '').trim() || (entry?.existingApiKey ?? '').trim();
       const resolvedAuthIndex =
         (entry?.authIndex ?? '').trim() || (authIndex ?? '').trim() || undefined;
       if (!entryKey && !resolvedAuthIndex) {
@@ -225,7 +226,6 @@ export function useConnectivityTest(
       const headerObj: Record<string, string> = {
         'Content-Type': 'application/json',
         ...buildHeaderObject(formHeaders),
-        ...parseHeadersText(entry?.headersText ?? ''),
       };
       if (!hasHeader(headerObj, 'authorization')) {
         if (entryKey) {
@@ -241,6 +241,7 @@ export function useConnectivityTest(
         const result = await apiCallApi.request(
           {
             authIndex: resolvedAuthIndex,
+            proxy_url: entry?.proxyUrl?.trim() || undefined,
             method: 'POST',
             url: endpoint,
             header: headerObj,
@@ -259,18 +260,9 @@ export function useConnectivityTest(
         updateOpenaiStatus(idx, { state: 'success', message: '' });
         return true;
       } catch (err) {
-        const raw = errorMessage(err);
-        const isTimeout =
-          (typeof err === 'object' &&
-            err !== null &&
-            'code' in err &&
-            String((err as { code?: string }).code) === 'ECONNABORTED') ||
-          raw.toLowerCase().includes('timeout');
         updateOpenaiStatus(idx, {
           state: 'error',
-          message: isTimeout
-            ? messages.timeout(DEFAULT_TIMEOUT_MS / 1000)
-            : raw || messages.requestFailed,
+          message: requestFailureMessage(err, messages),
         });
         return false;
       } finally {
@@ -296,6 +288,185 @@ export function useConnectivityTest(
     if (!entries.length) return;
     await Promise.all(entries.map((_, idx) => runOpenAIKey(idx)));
   }, [apiKeyEntries, brand, runOpenAIKey]);
+
+  const runCodex = useCallback(async (): Promise<void> => {
+    if (brand !== 'codex' && brand !== 'meta' && brand !== 'xai') return;
+
+    const trimmedBase = baseUrl.trim();
+    if (!trimmedBase) {
+      setCodexStatus({ state: 'error', message: messages.baseUrlRequired });
+      return;
+    }
+
+    const endpoint = buildCodexResponsesEndpoint(trimmedBase);
+    if (!endpoint) {
+      setCodexStatus({ state: 'error', message: messages.endpointInvalid });
+      return;
+    }
+
+    const model = pickModel(testModel, models);
+    if (!model) {
+      setCodexStatus({ state: 'error', message: messages.modelRequired });
+      return;
+    }
+
+    const customHeaders = buildHeaderObject(formHeaders);
+    const explicitKey = (apiKey ?? '').trim();
+    const persistedKey = (fallbackApiKey ?? '').trim();
+    const hasAuthorization = hasHeader(customHeaders, 'authorization');
+    const resolvedKey = explicitKey || persistedKey;
+    const resolvedAuthIndex = (authIndex ?? '').trim() || undefined;
+
+    if (!resolvedKey && !hasAuthorization && !resolvedAuthIndex) {
+      setCodexStatus({ state: 'error', message: messages.apiKeyRequired });
+      return;
+    }
+
+    const headerObj: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...customHeaders,
+    };
+    if (!hasHeader(headerObj, 'authorization')) {
+      if (resolvedKey) {
+        headerObj.Authorization = `Bearer ${resolvedKey}`;
+      } else if (resolvedAuthIndex) {
+        headerObj.Authorization = 'Bearer $TOKEN$';
+      }
+    }
+
+    setCodexStatus({ state: 'loading', message: '' });
+    setInFlight((n) => n + 1);
+    try {
+      const result = await apiCallApi.request(
+        {
+          authIndex: resolvedAuthIndex,
+          proxy_url: proxyUrl?.trim() || undefined,
+          method: 'POST',
+          url: endpoint,
+          header: headerObj,
+          data: JSON.stringify({
+            model,
+            input: 'Hi',
+            stream: false,
+          }),
+        },
+        { timeout: DEFAULT_TIMEOUT_MS }
+      );
+      if (result.statusCode < 200 || result.statusCode >= 300) {
+        throw new Error(getApiCallErrorMessage(result));
+      }
+      setCodexStatus({ state: 'success', message: '' });
+    } catch (err) {
+      setCodexStatus({
+        state: 'error',
+        message: requestFailureMessage(err, messages),
+      });
+    } finally {
+      setInFlight((n) => n - 1);
+    }
+  }, [
+    apiKey,
+    authIndex,
+    baseUrl,
+    brand,
+    fallbackApiKey,
+    formHeaders,
+    messages,
+    models,
+    testModel,
+    proxyUrl,
+  ]);
+
+  const runGemini = useCallback(async (): Promise<void> => {
+    if (brand !== 'gemini' && brand !== 'interactions') return;
+
+    const model = pickModel(testModel, models);
+    if (!model) {
+      setGeminiStatus({ state: 'error', message: messages.modelRequired });
+      return;
+    }
+
+    const endpoint =
+      brand === 'interactions'
+        ? buildInteractionsEndpoint(baseUrl ?? '')
+        : buildGeminiGenerateContentEndpoint(baseUrl ?? '', model);
+    if (!endpoint) {
+      setGeminiStatus({ state: 'error', message: messages.endpointInvalid });
+      return;
+    }
+
+    const customHeaders = buildHeaderObject(formHeaders);
+    const explicitKey = (apiKey ?? '').trim();
+    const persistedKey = (fallbackApiKey ?? '').trim();
+    const hasApiKeyHeader = hasHeader(customHeaders, 'x-goog-api-key');
+    const resolvedKey = explicitKey || persistedKey;
+    const resolvedAuthIndex = (authIndex ?? '').trim() || undefined;
+
+    if (!resolvedKey && !hasApiKeyHeader && !resolvedAuthIndex) {
+      setGeminiStatus({ state: 'error', message: messages.apiKeyRequired });
+      return;
+    }
+
+    const headerObj: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...customHeaders,
+    };
+    if (!hasHeader(headerObj, 'x-goog-api-key')) {
+      if (resolvedKey) {
+        headerObj['x-goog-api-key'] = resolvedKey;
+      } else if (resolvedAuthIndex) {
+        headerObj['x-goog-api-key'] = '$TOKEN$';
+      }
+    }
+    if (brand === 'interactions' && !hasHeader(headerObj, 'api-revision')) {
+      headerObj['Api-Revision'] = INTERACTIONS_API_REVISION;
+    }
+
+    setGeminiStatus({ state: 'loading', message: '' });
+    setInFlight((n) => n + 1);
+    try {
+      const result = await apiCallApi.request(
+        {
+          authIndex: resolvedAuthIndex,
+          proxy_url: proxyUrl?.trim() || undefined,
+          method: 'POST',
+          url: endpoint,
+          header: headerObj,
+          data: JSON.stringify(
+            brand === 'interactions'
+              ? buildInteractionsProbePayload(model)
+              : {
+                  contents: [{ parts: [{ text: 'Hi' }] }],
+                  generationConfig: { maxOutputTokens: 8 },
+                }
+          ),
+        },
+        { timeout: DEFAULT_TIMEOUT_MS }
+      );
+      if (result.statusCode < 200 || result.statusCode >= 300) {
+        throw new Error(getApiCallErrorMessage(result));
+      }
+      setGeminiStatus({ state: 'success', message: '' });
+    } catch (err) {
+      setGeminiStatus({
+        state: 'error',
+        message: requestFailureMessage(err, messages),
+      });
+    } finally {
+      setInFlight((n) => n - 1);
+    }
+  }, [
+    apiKey,
+    authIndex,
+    baseUrl,
+    brand,
+    fallbackApiKey,
+    formHeaders,
+    messages,
+    models,
+    testModel,
+    proxyUrl,
+  ]);
 
   const runClaude = useCallback(async (): Promise<void> => {
     if (brand !== 'claude') return;
@@ -343,6 +514,7 @@ export function useConnectivityTest(
       const result = await apiCallApi.request(
         {
           authIndex: resolvedAuthIndex,
+          proxy_url: proxyUrl?.trim() || undefined,
           method: 'POST',
           url: endpoint,
           header: headerObj,
@@ -359,18 +531,9 @@ export function useConnectivityTest(
       }
       setClaudeStatus({ state: 'success', message: '' });
     } catch (err) {
-      const raw = errorMessage(err);
-      const isTimeout =
-        (typeof err === 'object' &&
-          err !== null &&
-          'code' in err &&
-          String((err as { code?: string }).code) === 'ECONNABORTED') ||
-        raw.toLowerCase().includes('timeout');
       setClaudeStatus({
         state: 'error',
-        message: isTimeout
-          ? messages.timeout(DEFAULT_TIMEOUT_MS / 1000)
-          : raw || messages.requestFailed,
+        message: requestFailureMessage(err, messages),
       });
     } finally {
       setInFlight((n) => n - 1);
@@ -385,14 +548,19 @@ export function useConnectivityTest(
     messages,
     models,
     testModel,
+    proxyUrl,
   ]);
 
   return {
     openaiStatuses,
+    codexStatus,
+    geminiStatus,
     claudeStatus,
     isTestingAny: inFlight > 0,
     runOpenAIKey,
     runOpenAIAllKeys,
+    runCodex,
+    runGemini,
     runClaude,
   };
 }

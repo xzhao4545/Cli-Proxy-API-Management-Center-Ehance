@@ -8,6 +8,9 @@ import zhCN from './locales/zh-CN.json';
 import zhTW from './locales/zh-TW.json';
 import en from './locales/en.json';
 import ru from './locales/ru.json';
+import vi from './locales/vi.json';
+import ko from './locales/ko.json';
+import tr from './locales/tr.json';
 import { getInitialLanguage } from '@/utils/language';
 
 i18n.use(initReactI18next).init({
@@ -15,16 +18,19 @@ i18n.use(initReactI18next).init({
     'zh-CN': { translation: zhCN },
     'zh-TW': { translation: zhTW },
     en: { translation: en },
-    ru: { translation: ru }
+    ru: { translation: ru },
+    vi: { translation: vi },
+    ko: { translation: ko },
+    tr: { translation: tr },
   },
   lng: getInitialLanguage(),
   fallbackLng: 'zh-CN',
   interpolation: {
-    escapeValue: false // React 已经转义
+    escapeValue: false, // React 已经转义
   },
   react: {
-    useSuspense: false
-  }
+    useSuspense: false,
+  },
 });
 
 export default i18n;

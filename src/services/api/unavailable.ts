@@ -92,7 +92,7 @@ const serializeListParams = (params: UnavailableListParams = {}) => ({
 export const unavailableApi = {
   async list(params: UnavailableListParams = {}): Promise<UnavailableListResponse> {
     return normalizeList(
-      await apiClient.get('/unavailable', {
+      await apiClient.get(apiClient.getExtensionUrl('/v0/management/unavailable'), {
         params: serializeListParams(params),
         timeout: REQUEST_TIMEOUT_MS,
       })
@@ -100,7 +100,7 @@ export const unavailableApi = {
   },
 
   async resetQuota(body: ResetQuotaRequest): Promise<ResetQuotaResponse> {
-    const payload = await apiClient.post<Record<string, unknown>>('/reset-quota', {
+    const payload = await apiClient.post<Record<string, unknown>>(apiClient.getExtensionUrl('/v0/management/reset-quota'), {
       auth_index: body.auth_index,
       ...(body.model ? { model: body.model } : {}),
     }, {
@@ -118,7 +118,7 @@ export const unavailableApi = {
 
   async resetQuotaAll(body: ResetQuotaAllRequest = {}): Promise<ResetQuotaAllResponse> {
     const payload = await apiClient.post<Record<string, unknown>>(
-      '/reset-quota-all',
+      apiClient.getExtensionUrl('/v0/management/reset-quota-all'),
       body.provider ? { provider: body.provider } : {},
       { timeout: REQUEST_TIMEOUT_MS }
     );

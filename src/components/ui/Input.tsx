@@ -2,17 +2,26 @@ import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
-  hint?: string;
+  hint?: ReactNode;
   error?: string;
   rightElement?: ReactNode;
 }
 
-export function Input({ label, hint, error, rightElement, className = '', id, ...rest }: InputProps) {
+export function Input({
+  label,
+  hint,
+  error,
+  rightElement,
+  className = '',
+  id,
+  ...rest
+}: InputProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const hintId = hint ? `${inputId}-hint` : undefined;
   const errorId = error ? `${inputId}-error` : undefined;
-  const describedBy = [rest['aria-describedby'], errorId, hintId].filter(Boolean).join(' ') || undefined;
+  const describedBy =
+    [rest['aria-describedby'], errorId, hintId].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className="form-group">
@@ -26,7 +35,9 @@ export function Input({ label, hint, error, rightElement, className = '', id, ..
           {...rest}
         />
         {rightElement && (
-          <div style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+          <div
+            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+          >
             {rightElement}
           </div>
         )}

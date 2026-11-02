@@ -1,5 +1,5 @@
 /**
- * Amp CLI Integration (ampcode) 相关 API
+ * Amp CLI integration (ampcode) API.
  */
 
 import { apiClient } from './client';
@@ -10,6 +10,9 @@ import {
 } from './transformers';
 import type { AmpcodeConfig, AmpcodeModelMapping, AmpcodeUpstreamApiKeyMapping } from '@/types';
 
+// The backend mounts Amp as a custom extension under /v0/management.
+const ampcodeUrl = (path: string) => apiClient.getExtensionUrl(`/v0/management/ampcode${path}`);
+
 const serializeUpstreamApiKeyMappings = (mappings: AmpcodeUpstreamApiKeyMapping[]) =>
   mappings.map((mapping) => ({
     'upstream-api-key': mapping.upstreamApiKey,
@@ -18,42 +21,48 @@ const serializeUpstreamApiKeyMappings = (mappings: AmpcodeUpstreamApiKeyMapping[
 
 export const ampcodeApi = {
   async getAmpcode(): Promise<AmpcodeConfig> {
-    const data = await apiClient.get('/ampcode');
+    const data = await apiClient.get(ampcodeUrl(''));
     return normalizeAmpcodeConfig(data) ?? {};
   },
 
-  updateUpstreamUrl: (url: string) => apiClient.put('/ampcode/upstream-url', { value: url }),
-  clearUpstreamUrl: () => apiClient.delete('/ampcode/upstream-url'),
+  updateUpstreamUrl: (url: string) => apiClient.put(ampcodeUrl('/upstream-url'), { value: url }),
+  clearUpstreamUrl: () => apiClient.delete(ampcodeUrl('/upstream-url')),
 
-  updateUpstreamApiKey: (apiKey: string) => apiClient.put('/ampcode/upstream-api-key', { value: apiKey }),
-  clearUpstreamApiKey: () => apiClient.delete('/ampcode/upstream-api-key'),
+  updateUpstreamApiKey: (apiKey: string) =>
+    apiClient.put(ampcodeUrl('/upstream-api-key'), { value: apiKey }),
+  clearUpstreamApiKey: () => apiClient.delete(ampcodeUrl('/upstream-api-key')),
 
   async getUpstreamApiKeys(): Promise<AmpcodeUpstreamApiKeyMapping[]> {
-    const data = await apiClient.get<Record<string, unknown>>('/ampcode/upstream-api-keys');
+    const data = await apiClient.get<Record<string, unknown>>(ampcodeUrl('/upstream-api-keys'));
     const list = data?.['upstream-api-keys'] ?? data?.upstreamApiKeys ?? data?.items ?? data;
     return normalizeAmpcodeUpstreamApiKeys(list);
   },
 
   saveUpstreamApiKeys: (mappings: AmpcodeUpstreamApiKeyMapping[]) =>
-    apiClient.put('/ampcode/upstream-api-keys', { value: serializeUpstreamApiKeyMappings(mappings) }),
+    apiClient.put(ampcodeUrl('/upstream-api-keys'), {
+      value: serializeUpstreamApiKeyMappings(mappings),
+    }),
   patchUpstreamApiKeys: (mappings: AmpcodeUpstreamApiKeyMapping[]) =>
-    apiClient.patch('/ampcode/upstream-api-keys', { value: serializeUpstreamApiKeyMappings(mappings) }),
+    apiClient.patch(ampcodeUrl('/upstream-api-keys'), {
+      value: serializeUpstreamApiKeyMappings(mappings),
+    }),
   deleteUpstreamApiKeys: (upstreamApiKeys: string[]) =>
-    apiClient.delete('/ampcode/upstream-api-keys', { data: { value: upstreamApiKeys } }),
+    apiClient.delete(ampcodeUrl('/upstream-api-keys'), { data: { value: upstreamApiKeys } }),
 
   async getModelMappings(): Promise<AmpcodeModelMapping[]> {
-    const data = await apiClient.get<Record<string, unknown>>('/ampcode/model-mappings');
+    const data = await apiClient.get<Record<string, unknown>>(ampcodeUrl('/model-mappings'));
     const list = data?.['model-mappings'] ?? data?.modelMappings ?? data?.items ?? data;
     return normalizeAmpcodeModelMappings(list);
   },
 
   saveModelMappings: (mappings: AmpcodeModelMapping[]) =>
-    apiClient.put('/ampcode/model-mappings', { value: mappings }),
+    apiClient.put(ampcodeUrl('/model-mappings'), { value: mappings }),
   patchModelMappings: (mappings: AmpcodeModelMapping[]) =>
-    apiClient.patch('/ampcode/model-mappings', { value: mappings }),
-  clearModelMappings: () => apiClient.delete('/ampcode/model-mappings'),
+    apiClient.patch(ampcodeUrl('/model-mappings'), { value: mappings }),
+  clearModelMappings: () => apiClient.delete(ampcodeUrl('/model-mappings')),
   deleteModelMappings: (fromList: string[]) =>
-    apiClient.delete('/ampcode/model-mappings', { data: { value: fromList } }),
+    apiClient.delete(ampcodeUrl('/model-mappings'), { data: { value: fromList } }),
 
-  updateForceModelMappings: (enabled: boolean) => apiClient.put('/ampcode/force-model-mappings', { value: enabled })
+  updateForceModelMappings: (enabled: boolean) =>
+    apiClient.put(ampcodeUrl('/force-model-mappings'), { value: enabled }),
 };

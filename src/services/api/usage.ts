@@ -129,35 +129,35 @@ const normalizeMetricsResponse = (payload: unknown): MetricsResponse => {
 
 export const usageApi = {
   async getEvents(params: UsageQueryParams = {}) {
-    return normalizeEventsResponse(await apiClient.get(`${API_PREFIX}/events`, {
+    return normalizeEventsResponse(await apiClient.get(apiClient.getExtensionUrl(`/v0/management${API_PREFIX}/events`), {
       params,
       timeout: USAGE_TIMEOUT_MS,
     }));
   },
 
   async getSummary(params: UsageSummaryParams = {}) {
-    return normalizeSummaryResponse(await apiClient.get(`${API_PREFIX}/summary`, {
+    return normalizeSummaryResponse(await apiClient.get(apiClient.getExtensionUrl(`/v0/management${API_PREFIX}/summary`), {
       params,
       timeout: USAGE_TIMEOUT_MS,
     }));
   },
 
   async getFailures(params: UsageQueryParams = {}) {
-    return normalizeFailuresResponse(await apiClient.get(`${API_PREFIX}/failures`, {
+    return normalizeFailuresResponse(await apiClient.get(apiClient.getExtensionUrl(`/v0/management${API_PREFIX}/failures`), {
       params,
       timeout: USAGE_TIMEOUT_MS,
     }));
   },
 
   async getFilters(params: UsageQueryParams = {}) {
-    return normalizeFiltersResponse(await apiClient.get(`${API_PREFIX}/filters`, {
+    return normalizeFiltersResponse(await apiClient.get(apiClient.getExtensionUrl(`/v0/management${API_PREFIX}/filters`), {
       params,
       timeout: USAGE_TIMEOUT_MS,
     }));
   },
 
   async getMetrics(params: UsageQueryParams = {}) {
-    return normalizeMetricsResponse(await apiClient.get(`${API_PREFIX}/metrics`, {
+    return normalizeMetricsResponse(await apiClient.get(apiClient.getExtensionUrl(`/v0/management${API_PREFIX}/metrics`), {
       params,
       timeout: USAGE_TIMEOUT_MS,
     }));

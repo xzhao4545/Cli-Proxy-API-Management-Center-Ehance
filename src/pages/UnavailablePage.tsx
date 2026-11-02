@@ -334,6 +334,9 @@ export function UnavailablePage() {
   const expiredRefreshTimerRef = useRef<number | null>(null);
   const pendingExpiredRefreshRef = useRef(false);
   const knownExpiredKeysRef = useRef<Set<string>>(new Set());
+  const loadItemsRef = useRef<
+    ((filters: AppliedFilters, options?: { silent?: boolean }) => Promise<void>) | null
+  >(null);
 
   const disableControls = connectionStatus !== 'connected';
 
@@ -399,13 +402,17 @@ export function UnavailablePage() {
           }
           if (pendingExpiredRefreshRef.current) {
             pendingExpiredRefreshRef.current = false;
-            void loadItems(appliedRef.current, { silent: true });
+            void loadItemsRef.current?.(appliedRef.current, { silent: true });
           }
         }
       }
     },
     [connectionStatus, t]
   );
+
+  useEffect(() => {
+    loadItemsRef.current = loadItems;
+  }, [loadItems]);
 
   const buildFiltersFromInputs = useCallback(
     (): AppliedFilters => ({

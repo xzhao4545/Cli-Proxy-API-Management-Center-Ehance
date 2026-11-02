@@ -1,34 +1,20 @@
 import { useTranslation } from 'react-i18next';
-import ampcodeLogo from '@/assets/icons/amp.svg';
-import claudeLogo from '@/assets/icons/claude.svg';
-import codexLogo from '@/assets/icons/codex.svg';
-import geminiLogo from '@/assets/icons/gemini.svg';
-import openaiLogo from '@/assets/icons/openai-light.svg';
-import vertexLogo from '@/assets/icons/vertex.svg';
-import { IconPlus, IconSearch } from '@/components/ui/icons';
+import { IconExternalLink, IconPlus, IconSearch } from '@/components/ui/icons';
 import type { ProviderRecentUsageMap } from '@/components/providers/utils';
-import type { ProviderBrand, ProviderGroup, ProviderResource } from '../types';
+import { PROVIDER_LOGOS } from '../brandLogos';
+import { getKimiAffiliateUrl } from '../kimi';
+import { APIKEY_FUN_AFFILIATE_URL, APIKEY_FUN_DASHBOARD_URL } from '../sponsor';
+import { getSponsorProviderDefinition } from '../sponsorDefinitions';
+import type { ProviderGroup, ProviderResource } from '../types';
 import { ProviderResourceTable } from './ProviderResourceTable';
-import {
-  OpenAIBrandToolbar,
-  type OpenAISortBy,
-  type SortDir,
-} from './OpenAIBrandToolbar';
+import { ProviderResourceToolbar } from './ProviderResourceToolbar';
+import type { ProviderSortBy, SortDir } from '../types';
 import styles from './ProviderResourcePanel.module.scss';
 
-const LOGOS: Record<ProviderBrand, { src: string; invertOnDark?: boolean }> = {
-  gemini: { src: geminiLogo },
-  claude: { src: claudeLogo },
-  codex: { src: codexLogo },
-  vertex: { src: vertexLogo },
-  openaiCompatibility: { src: openaiLogo, invertOnDark: true },
-  ampcode: { src: ampcodeLogo },
-};
-
-export interface OpenAIPanelControls {
-  sortBy: OpenAISortBy;
+export interface ProviderPanelControls {
+  sortBy: ProviderSortBy;
   sortDir: SortDir;
-  onSortBy: (value: OpenAISortBy) => void;
+  onSortBy: (value: ProviderSortBy) => void;
   onSortDir: (value: SortDir) => void;
   availableModels: ReadonlyArray<string>;
   selectedModels: ReadonlySet<string>;
@@ -43,7 +29,7 @@ interface ProviderResourcePanelProps {
   selectedId: string | null;
   disableMutations?: boolean;
   usageByProvider?: ProviderRecentUsageMap;
-  openaiControls?: OpenAIPanelControls;
+  toolbarControls?: ProviderPanelControls;
   onView: (resource: ProviderResource) => void;
   onEdit: (resource: ProviderResource) => void;
   onDelete: (resource: ProviderResource) => void;
@@ -59,41 +45,121 @@ export function ProviderResourcePanel({
   selectedId,
   disableMutations,
   usageByProvider,
-  openaiControls,
+  toolbarControls,
   onView,
   onEdit,
   onDelete,
   onToggleDisabled,
   onCreate,
 }: ProviderResourcePanelProps) {
-  const { t } = useTranslation();
-  const logo = LOGOS[group.id];
+  const { t, i18n } = useTranslation();
+  const logo = PROVIDER_LOGOS[group.id];
+  const providerTitle = t(`providersPage.providerNames.${group.id}`);
+  const hasProviderInfo = group.resources.length > 0;
+  const showSponsorRegistrationLink = group.id === 'apikeyFun' && !hasProviderInfo;
+  const showSponsorDashboardLink = group.id === 'apikeyFun' && hasProviderInfo;
+  const registrationUrl =
+    group.id === 'kimi'
+      ? getKimiAffiliateUrl(i18n.resolvedLanguage ?? i18n.language)
+      : group.id === 'fennoAI' || group.id === 'qiniuCloud'
+        ? getSponsorProviderDefinition(group.id).affiliateUrl
+        : null;
+  const registrationLabel = t(
+    group.id === 'kimi' ? 'providersPage.sponsor.registerNow' : 'providersPage.sponsor.registerLink'
+  );
+  const emptyText = showSponsorRegistrationLink
+    ? t('providersPage.sponsor.emptyRegisterHint')
+    : t('providersPage.table.empty');
+  const logoClassName = [
+    styles.logo,
+    logo?.themeSurface ? styles.logoThemeSurface : '',
+    logo?.darkSrc ? styles.logoThemeLight : '',
+    logo?.invertOnDark ? styles.logoInvertOnDark : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const darkLogoClassName = [
+    styles.logo,
+    logo?.themeSurface ? styles.logoThemeSurface : '',
+    styles.logoThemeDark,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  const realResources = filteredResources.filter((r) => !r.flags.isPlaceholder);
+  const titleContent = (
+    <>
+      {logo ? (
+        <>
+          <img src={logo.src} alt="" aria-hidden="true" className={logoClassName} />
+          {logo.darkSrc ? (
+            <img src={logo.darkSrc} alt="" aria-hidden="true" className={darkLogoClassName} />
+          ) : null}
+        </>
+      ) : null}
+      <h2 className={styles.title}>{providerTitle}</h2>
+      {showSponsorDashboardLink ? (
+        <IconExternalLink className={styles.titleExternalIcon} size={16} />
+      ) : null}
+    </>
+  );
 
   return (
     <section className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.headerMain}>
           <div className={styles.titleArea}>
-            <div className={styles.titleRow}>
-              {logo ? (
-                <img
-                  src={logo.src}
-                  alt=""
-                  aria-hidden="true"
-                  className={`${styles.logo} ${logo.invertOnDark ? styles.logoInvertOnDark : ''}`}
-                />
-              ) : null}
-              <h2 className={styles.title}>
-                {t(`providersPage.providerNames.${group.id}`)}
-              </h2>
-            </div>
+            {showSponsorDashboardLink ? (
+              <a
+                className={`${styles.titleRow} ${styles.titleLink}`}
+                href={APIKEY_FUN_DASHBOARD_URL}
+                target="_blank"
+                rel="noreferrer"
+                title={t('providersPage.sponsor.dashboardLink')}
+              >
+                {titleContent}
+              </a>
+            ) : (
+              <div className={styles.titleRow}>{titleContent}</div>
+            )}
+            {showSponsorDashboardLink ? (
+              <a
+                className={styles.sponsorLink}
+                href={APIKEY_FUN_DASHBOARD_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span className={styles.sponsorLinkText}>
+                  {t('providersPage.sponsor.dashboardLink')}
+                </span>
+                <IconExternalLink className={styles.sponsorLinkIcon} size={14} />
+              </a>
+            ) : registrationUrl ? (
+              <>
+                <a
+                  className={[
+                    styles.sponsorLink,
+                    styles.sponsorLinkEmphasis,
+                    group.id === 'kimi' ? styles.sponsorLinkKimi : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  href={registrationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span className={styles.sponsorLinkText}>{registrationLabel}</span>
+                  <IconExternalLink className={styles.sponsorLinkIcon} size={14} />
+                </a>
+                {group.id === 'kimi' ? (
+                  <p className={styles.kimiPromo}>{t('providersPage.sponsor.kimiPromo')}</p>
+                ) : null}
+              </>
+            ) : null}
           </div>
           {group.id !== 'ampcode' ? (
             <div className={styles.searchWrap}>
               <span className={styles.searchIcon} aria-hidden="true">
-                <IconSearch size={14} />
+                <IconSearch size={16} />
               </span>
               <input
                 type="search"
@@ -105,53 +171,42 @@ export function ProviderResourcePanel({
             </div>
           ) : null}
         </div>
-        {openaiControls ? (
+        {toolbarControls ? (
           <div className={styles.headerToolbarRow}>
-            <OpenAIBrandToolbar
-              sortBy={openaiControls.sortBy}
-              sortDir={openaiControls.sortDir}
-              onSortBy={openaiControls.onSortBy}
-              onSortDir={openaiControls.onSortDir}
-              availableModels={openaiControls.availableModels}
-              selectedModels={openaiControls.selectedModels}
-              onSelectedModelsChange={openaiControls.onSelectedModelsChange}
+            <ProviderResourceToolbar
+              key={group.id}
+              sortBy={toolbarControls.sortBy}
+              sortDir={toolbarControls.sortDir}
+              onSortBy={toolbarControls.onSortBy}
+              onSortDir={toolbarControls.onSortDir}
+              availableModels={toolbarControls.availableModels}
+              selectedModels={toolbarControls.selectedModels}
+              onSelectedModelsChange={toolbarControls.onSelectedModelsChange}
             />
           </div>
         ) : null}
       </div>
 
-      {group.issue ? (
-        <div className={styles.issue}>
-          <div className={styles.issueTitle}>
-            {t('providersPage.table.providerIssue')}
-            {group.issue.status ? ` · ${group.issue.status}` : ''}
-          </div>
-          <div>{group.issue.message}</div>
-        </div>
-      ) : null}
-
-      {realResources.length === 0 && group.id !== 'ampcode' ? (
+      {filteredResources.length === 0 && group.id !== 'ampcode' ? (
         <div className={styles.empty}>
-          <div>{t('providersPage.table.empty')}</div>
+          <div>{emptyText}</div>
           <div className={styles.emptyAction}>
-            <button
-              type="button"
-              onClick={onCreate}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-color)',
-                background: 'var(--bg-primary)',
-                cursor: 'pointer',
-                fontSize: 13,
-              }}
-            >
-              <IconPlus size={14} />
-              <span>{t('providersPage.actions.new')}</span>
-            </button>
+            {showSponsorRegistrationLink ? (
+              <a
+                className={`${styles.emptyActionButton} ${styles.emptyActionButtonEmphasis}`}
+                href={APIKEY_FUN_AFFILIATE_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <IconExternalLink size={16} />
+                <span>{t('providersPage.sponsor.registerLink')}</span>
+              </a>
+            ) : (
+              <button type="button" className={styles.emptyActionButton} onClick={onCreate}>
+                <IconPlus size={16} />
+                <span>{t('providersPage.actions.new')}</span>
+              </button>
+            )}
           </div>
         </div>
       ) : (

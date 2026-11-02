@@ -12,7 +12,6 @@
   --bg-quinary: #f6f4ee;
   --bg-error-light: rgba(198, 87, 70, 0.1);
   --floating-surface: #fffdf9;
-  --floating-border: #d8d3ca;
   --floating-shadow: 0 12px 26px rgba(0, 0, 0, 0.14);
 
   --text-primary: #2d2a26;
@@ -57,7 +56,6 @@
   --shadow-lg: 0 10px 18px -3px rgb(0 0 0 / 0.1);
 
   --radius-md: 8px;
-  --accent-tertiary: var(--bg-tertiary);
 
   // Workbench tokens (Home parity)
   --primary-8: color-mix(in srgb, var(--primary-color) 8%, transparent);
@@ -81,6 +79,29 @@
   --glass-bg: color-mix(in srgb, var(--bg-primary) 82%, transparent);
   --glass-bg-secondary: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
   --glass-border: color-mix(in srgb, var(--border-color) 60%, transparent);
+
+  // 可视化配色：与语义色同源；深色模式下重新取步阶（见 [data-theme='dark']）。
+  // 规则：翡翠绿只表达「活的流量」。
+  --viz-success: #10b981;
+  --viz-failure: #c65746;
+
+  // 动效词汇表：内置 ease 太弱，交互反馈统一用强减速曲线。
+  // 按压 160ms / 悬停 200ms，UI 动效不超过 300ms。
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-press: 160ms;
+  --dur-hover: 200ms;
+
+  // 套房色（额度卡高档位）：日间石灰华、夜间冷调石材，配暗藏灯带的暖光。
+  // 套餐文字色在浅色底上压暗到 AA 对比度。
+  --suite-travertine: #f8efe1;
+  --suite-travertine-deep: #efe1cb;
+  --suite-stone: #202226;
+  --suite-stone-deep: #18191c;
+  --suite-ink: #f2efea;
+  --suite-ink-muted: #8e929b;
+  --suite-champagne: #e5c49f;
+  --suite-amber: #d69e68;
+  --plan-accent-text: #8a6438;
 }
 
 // 纯白主题
@@ -92,7 +113,6 @@
   --bg-quinary: #ffffff;
   --bg-error-light: rgba(198, 87, 70, 0.08);
   --floating-surface: #ffffff;
-  --floating-border: #d9d9d9;
   --floating-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
 
   --text-primary: #2d2a26;
@@ -137,7 +157,6 @@
   --shadow-lg: 0 10px 18px -3px rgb(0 0 0 / 0.1);
 
   --radius-md: 8px;
-  --accent-tertiary: var(--bg-tertiary);
 
   // Workbench tokens (Home parity)
   --primary-8: color-mix(in srgb, var(--primary-color) 8%, transparent);
@@ -165,7 +184,6 @@
   --bg-quinary: #191714;
   --bg-error-light: rgba(198, 87, 70, 0.18);
   --floating-surface: #2a2723;
-  --floating-border: #4a443d;
   --floating-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
 
   --text-primary: #f6f4f1;
@@ -210,7 +228,6 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
 
   --radius-md: 8px;
-  --accent-tertiary: var(--bg-tertiary);
 
   // Workbench tokens (Home parity, deeper amber for dark)
   --primary-8: color-mix(in srgb, var(--primary-color) 8%, transparent);
@@ -228,9 +245,18 @@
   --accent-bg: var(--bg-tertiary);
 
   --glass-border: color-mix(in srgb, var(--border-color) 55%, transparent);
+
+  // 深色卡面上 #10b981 亮度超出 OKLCH 0.48–0.67 区间，且与失败色的色盲分离度不足，
+  // 因此深色单独降一档。三套主题均已通过对比度/色盲/亮度校验。
+  --viz-success: #0fae78;
+  --viz-failure: #cf4b3a;
+
+  --plan-accent-text: var(--suite-champagne);
 }
 
-@media (max-width: 768px), (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+@media (max-width: 768px),
+  (prefers-reduced-motion: reduce),
+  (prefers-reduced-transparency: reduce) {
   :root {
     --glass-backdrop-filter: none;
     --glass-filter: none;
