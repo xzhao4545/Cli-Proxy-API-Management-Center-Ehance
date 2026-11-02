@@ -58,7 +58,10 @@ describe('removed quick-access providers', () => {
         );
         if (brand === 'claude') expect(resource.flags.claudeCodeCliProfile).toBe(true);
       }
-      expect(groups.flatMap((group) => group.resources)).toHaveLength(4);
+      // Amp exposes a singleton configuration entry independently of provider credentials.
+      expect(
+        groups.filter((group) => group.id !== 'ampcode').flatMap((group) => group.resources)
+      ).toHaveLength(4);
     });
   }
 });
