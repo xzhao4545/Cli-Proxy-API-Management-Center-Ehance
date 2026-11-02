@@ -1137,15 +1137,22 @@
         "title": "响应模型校验",
         "description": "仅校验规则选中的提供商和模型，沿用宽松匹配，允许支持的上下文、思考强度和日期等后缀。响应未提供模型时放行。选中的流式响应会完整缓存后再放行，增加首字等待时间；模型不匹配时返回 502。",
         "provider": "提供商种类 / 标识",
-        "provider_hint": "例如 codex、claude、gemini、vertex；OpenAI 兼容提供商使用 openai-compatible-<name>。",
+        "provider_hint": "选择提供商种类或已配置的 OpenAI 兼容提供商标识。",
         "label": "具体提供商 label（可选）",
-        "label_hint": "填写提供商配置中的 label，区分大小写；留空覆盖该种类 / 标识的所有凭据。用量统计的显示名称覆盖不参与匹配。",
+        "label_hint": "选择提供商配置中的 label，区分大小写；选择全部覆盖该种类的所有凭据。用量统计的显示名称覆盖不参与匹配。",
         "models": "命中模型",
-        "models_hint": "每行一个模型，填写别名映射和模型池选择后实际命中的上游模型 ID。",
+        "models_hint": "可从上方下拉框选择添加，也可每行手动填写一个模型。使用别名映射和模型池选择后实际命中的上游模型 ID。",
         "empty": "尚未配置规则，响应模型校验未启用。",
         "rule": "校验规则 {{index}}",
         "add": "添加校验规则",
-        "remove": "删除校验规则 {{index}}"
+        "remove": "删除校验规则 {{index}}",
+        "provider_placeholder": "选择或搜索提供商",
+        "label_placeholder": "搜索提供商 label",
+        "all_labels": "全部提供商 label",
+        "select_model": "选择模型添加",
+        "model_placeholder": "选择或搜索上游模型",
+        "no_models": "暂无可添加的模型，可在下方手动填写上游模型 ID。",
+        "no_options": "没有匹配的选项"
       },
       "serverExtras": {
         "trustedProxies": {
@@ -2509,7 +2516,11 @@
     "ttft_ms": "毫秒",
     "page_jump": "跳页",
     "filter_search": "输入筛选",
-    "filter_no_match": "无匹配项"
+    "filter_no_match": "无匹配项",
+    "response_model_mismatch": "模型不一致",
+    "response_model_blocked": "已拦截",
+    "response_model_mismatch_detail": "响应模型 {{responseModel}} 与命中模型 {{model}} 不一致。",
+    "response_model_blocked_detail": "响应模型校验已拦截此响应（HTTP 502）。命中模型：{{model}}；响应模型：{{responseModel}}。"
   },
   "unavailable": {
     "title": "不可用 / 冷却",

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { parseDocument } from 'yaml';
+import { normalizeConfigResponse } from '@/services/api/transformers';
 import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useRevealGroup } from '@/hooks/motion';
@@ -108,6 +110,10 @@ export function ConfigPage() {
     applyVisualChangesToYaml,
   });
   const sourceSearch = useSourceSearch();
+  const providerConfig = useMemo(() => {
+    const parsed = parseDocument(doc.content);
+    return normalizeConfigResponse(parsed.errors.length ? {} : parsed.toJS());
+  }, [doc.content]);
 
   const disableControls = connectionStatus !== 'connected';
   const hasVisualModeError = !!visualParseError;
@@ -279,7 +285,7 @@ export function ConfigPage() {
       case 'connectivity':
         return <SectionConnectivity {...sectionProps} />;
       case 'network':
-        return <SectionNetwork {...sectionProps} />;
+        return <SectionNetwork {...sectionProps} config={providerConfig} />;
       case 'logging':
         return <SectionLogging {...sectionProps} />;
       case 'streaming':

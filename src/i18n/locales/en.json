@@ -1138,15 +1138,22 @@
         "title": "Response model validation",
         "description": "Validate selected provider/model combinations using loose model matching, including supported context, thinking and date suffixes. Missing response models are allowed. Selected streams are fully buffered before release, increasing the wait for the first token; mismatches return 502.",
         "provider": "Provider kind / key",
-        "provider_hint": "Examples: codex, claude, gemini, vertex. For OpenAI-compatible providers, use openai-compatible-<name>.",
+        "provider_hint": "Select a provider kind or a configured OpenAI-compatible provider key.",
         "label": "Specific provider label (optional)",
-        "label_hint": "Enter the label from the provider configuration, matching case. Leave blank to cover all credentials of this provider kind/key. Usage display overrides do not apply.",
+        "label_hint": "Select a configured provider label, matching case. Select all to cover every credential of this provider kind/key. Usage display overrides do not apply.",
         "models": "Selected models",
-        "models_hint": "One model per line. Use the resolved upstream model ID after alias/model-pool selection.",
+        "models_hint": "Add models from the dropdown above, or enter one model per line. Use resolved upstream model IDs after alias/model-pool selection.",
         "empty": "No rules configured. Response model validation is disabled.",
         "rule": "Validation rule {{index}}",
         "add": "Add validation rule",
-        "remove": "Delete validation rule {{index}}"
+        "remove": "Delete validation rule {{index}}",
+        "provider_placeholder": "Select or search providers",
+        "label_placeholder": "Search provider labels",
+        "all_labels": "All provider labels",
+        "select_model": "Select a model to add",
+        "model_placeholder": "Select or search upstream models",
+        "no_models": "No models available to add. Enter an upstream model ID below.",
+        "no_options": "No matching options"
       },
       "serverExtras": {
         "trustedProxies": {
@@ -2510,7 +2517,11 @@
     "ttft_ms": "ms",
     "page_jump": "Page",
     "filter_search": "Type to filter",
-    "filter_no_match": "No matches"
+    "filter_no_match": "No matches",
+    "response_model_mismatch": "Model mismatch",
+    "response_model_blocked": "Blocked",
+    "response_model_mismatch_detail": "Response model {{responseModel}} does not match the selected upstream model {{model}}.",
+    "response_model_blocked_detail": "Response model validation blocked this response (HTTP 502). Selected upstream model: {{model}}; response model: {{responseModel}}."
   },
   "unavailable": {
     "title": "Unavailable / Cooldown",

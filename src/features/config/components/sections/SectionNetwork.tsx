@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { VisualConfigValues } from '@/types/visualConfig';
+import type { Config } from '@/types/config';
 import { CONFIG_TAB_ICONS, SECTION_INDEX_LABELS } from '../../constants';
 import type { ConfigSectionProps } from '../../types';
 import { SectionCard } from '../SectionCard';
@@ -22,11 +23,12 @@ type DisableImageGeneration = VisualConfigValues['disableImageGeneration'];
 /** 02 网络配置：代理、重试、路由策略、图像生成开关与网络行为开关。 */
 export function SectionNetwork({
   values,
+  config,
   validationErrors,
   disabled,
   animateIn,
   onChange,
-}: ConfigSectionProps) {
+}: ConfigSectionProps & { config?: Config }) {
   const { t } = useTranslation();
 
   const routingStrategyOptions: Array<{ value: RoutingStrategy; label: string }> = [
@@ -259,6 +261,7 @@ export function SectionNetwork({
             <ResponseModelValidationEditor
               {...a11y}
               value={values.responseModelValidation}
+              config={config}
               disabled={disabled}
               onChange={(responseModelValidation) => onChange({ responseModelValidation })}
             />

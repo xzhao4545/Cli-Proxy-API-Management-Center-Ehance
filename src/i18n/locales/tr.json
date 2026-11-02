@@ -1138,15 +1138,22 @@
         "title": "Yanıt Modeli Doğrulaması",
         "description": "Seçilen sağlayıcı/model çiftleri, desteklenen bağlam, düşünme ve tarih son eklerini kabul eden esnek eşleştirmeyle doğrulanır. Model içermeyen yanıtlar kabul edilir. Seçilen akışlar gönderilmeden önce tamamen tamponlanır; ilk token bekleme süresi artar. Model uyuşmazlığı 502 döndürür.",
         "provider": "Sağlayıcı Türü / Anahtarı",
-        "provider_hint": "Örnek: codex, claude, gemini, vertex. OpenAI uyumlu sağlayıcılar için openai-compatible-<name> kullanın.",
+        "provider_hint": "Sağlayıcı türünü veya yapılandırılmış OpenAI uyumlu sağlayıcı anahtarını seçin.",
         "label": "Belirli Sağlayıcı Label Değeri (İsteğe Bağlı)",
-        "label_hint": "Yapılandırmadaki label değerini büyük/küçük harfe dikkat ederek girin. Boş bırakılırsa bu tür/anahtarın tüm kimlik bilgilerini kapsar. Kullanım istatistiklerindeki görüntü adı geçersiz kılmaları uygulanmaz.",
+        "label_hint": "Büyük/küçük harfe duyarlı sağlayıcı label değerini seçin. Tümü seçeneği bu türün/anahtarın tüm kimlik bilgilerini kapsar. Kullanım görünen adları eşleştirmede kullanılmaz.",
         "models": "Seçilen Modeller",
-        "models_hint": "Her satıra bir model girin. Takma ad eşleştirmesi ve model havuzu seçiminden sonraki gerçek üst sağlayıcı model kimliğini kullanın.",
+        "models_hint": "Yukarıdaki listeden model ekleyin veya her satıra bir model girin. Takma ad/model havuzu seçiminden sonra kullanılan gerçek üst sağlayıcı model kimliklerini kullanın.",
         "empty": "Kural yapılandırılmamış. Yanıt modeli doğrulaması devre dışı.",
         "rule": "Doğrulama Kuralı {{index}}",
         "add": "Doğrulama Kuralı Ekle",
-        "remove": "Doğrulama Kuralı {{index}} Sil"
+        "remove": "Doğrulama Kuralı {{index}} Sil",
+        "provider_placeholder": "Sağlayıcı seçin veya arayın",
+        "label_placeholder": "Sağlayıcı label ara",
+        "all_labels": "Tüm sağlayıcı label değerleri",
+        "select_model": "Eklenecek modeli seçin",
+        "model_placeholder": "Üst sağlayıcı modeli seçin veya arayın",
+        "no_models": "Eklenecek model yok. Aşağıya üst sağlayıcı model kimliği girin.",
+        "no_options": "Eşleşen seçenek yok"
       },
       "serverExtras": {
         "trustedProxies": {
@@ -2510,7 +2517,11 @@
     "ttft_ms": "ms",
     "page_jump": "Page",
     "filter_search": "Type to filter",
-    "filter_no_match": "No matches"
+    "filter_no_match": "No matches",
+    "response_model_mismatch": "Model uyuşmazlığı",
+    "response_model_blocked": "Engellendi",
+    "response_model_mismatch_detail": "Yanıt modeli {{responseModel}}, seçilen üst sağlayıcı modeli {{model}} ile eşleşmiyor.",
+    "response_model_blocked_detail": "Yanıt modeli doğrulaması bu yanıtı engelledi (HTTP 502). Seçilen model: {{model}}; yanıt modeli: {{responseModel}}."
   },
   "unavailable": {
     "title": "Unavailable / Cooldown",

@@ -425,6 +425,53 @@
   text-overflow: ellipsis;
 }
 
+.cellResponseModel {
+  max-width: 150px;
+}
+
+.responseModelName {
+  display: block;
+  overflow: hidden;
+  font-family: $font-mono;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.responseModelNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: $radius-full;
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: pointer;
+
+  svg {
+    flex: 0 0 auto;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.responseModelMismatch {
+  color: var(--amber-text);
+  background: var(--amber-10);
+  border-color: var(--amber-30);
+}
+
+.responseModelBlocked {
+  color: var(--failure-badge-text);
+  background: var(--failure-badge-bg);
+  border-color: var(--failure-badge-border);
+}
+
 .cellStream {
   white-space: nowrap;
 }

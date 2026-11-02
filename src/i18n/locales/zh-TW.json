@@ -1164,15 +1164,22 @@
         "title": "回應模型驗證",
         "description": "僅驗證規則選取的提供商和模型，沿用寬鬆比對，允許支援的上下文、思考強度和日期等後綴。回應未提供模型時放行。選取的串流回應會完整緩存後再放行，增加首字等待時間；模型不符時回傳 502。",
         "provider": "提供商種類 / 識別碼",
-        "provider_hint": "例如 codex、claude、gemini、vertex；OpenAI 相容提供商使用 openai-compatible-<name>。",
+        "provider_hint": "選擇提供商種類或已設定的 OpenAI 相容提供商識別碼。",
         "label": "特定提供商 label（選填）",
-        "label_hint": "填寫提供商設定中的 label，區分大小寫；留空涵蓋該種類 / 識別碼的所有憑證。用量統計的顯示名稱覆寫不參與比對。",
+        "label_hint": "選擇提供商設定中的 label，區分大小寫；選擇全部涵蓋該種類的所有憑證。用量統計的顯示名稱覆寫不參與比對。",
         "models": "命中模型",
-        "models_hint": "每行一個模型，填寫別名對應和模型池選取後實際命中的上游模型 ID。",
+        "models_hint": "可從上方下拉選單選擇新增，也可每行手動填寫一個模型。使用別名對應和模型池選擇後實際命中的上游模型 ID。",
         "empty": "尚未設定規則，回應模型驗證未啟用。",
         "rule": "驗證規則 {{index}}",
         "add": "新增驗證規則",
-        "remove": "刪除驗證規則 {{index}}"
+        "remove": "刪除驗證規則 {{index}}",
+        "provider_placeholder": "選擇或搜尋提供商",
+        "label_placeholder": "搜尋提供商 label",
+        "all_labels": "全部提供商 label",
+        "select_model": "選擇模型新增",
+        "model_placeholder": "選擇或搜尋上游模型",
+        "no_models": "暫無可新增的模型，可在下方手動填寫上游模型 ID。",
+        "no_options": "沒有符合的選項"
       },
       "serverExtras": {
         "trustedProxies": {
@@ -2536,7 +2543,11 @@
     "filter_search": "輸入篩選",
     "filter_no_match": "無符合項目",
     "range_from": "開始時間",
-    "range_to": "結束時間"
+    "range_to": "結束時間",
+    "response_model_mismatch": "模型不一致",
+    "response_model_blocked": "已攔截",
+    "response_model_mismatch_detail": "回應模型 {{responseModel}} 與命中模型 {{model}} 不一致。",
+    "response_model_blocked_detail": "回應模型校驗已攔截此回應（HTTP 502）。命中模型：{{model}}；回應模型：{{responseModel}}。"
   },
   "unavailable": {
     "title": "不可用 / 冷卻",

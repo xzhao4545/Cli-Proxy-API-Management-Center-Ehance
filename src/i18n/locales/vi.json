@@ -1090,15 +1090,22 @@
         "title": "Kiểm tra mô hình phản hồi",
         "description": "Kiểm tra các cặp nhà cung cấp/mô hình đã chọn bằng cách so khớp linh hoạt với hậu tố ngữ cảnh, suy luận và ngày được hỗ trợ. Cho phép phản hồi thiếu mô hình. Luồng đã chọn được đệm toàn bộ trước khi gửi, tăng thời gian chờ token đầu tiên; sai mô hình trả về 502.",
         "provider": "Loại / khóa nhà cung cấp",
-        "provider_hint": "Ví dụ: codex, claude, gemini, vertex. Nhà cung cấp tương thích OpenAI dùng openai-compatible-<name>.",
+        "provider_hint": "Chọn loại nhà cung cấp hoặc khóa nhà cung cấp tương thích OpenAI đã cấu hình.",
         "label": "Label nhà cung cấp cụ thể (tùy chọn)",
-        "label_hint": "Nhập label trong cấu hình, phân biệt chữ hoa/thường. Để trống áp dụng cho mọi thông tin xác thực thuộc loại/khóa này. Tên hiển thị thay thế trong thống kê không được dùng.",
+        "label_hint": "Chọn label nhà cung cấp, phân biệt chữ hoa và chữ thường. Chọn tất cả để áp dụng cho mọi thông tin xác thực của loại/khóa này. Tên hiển thị trong thống kê không dùng để đối chiếu.",
         "models": "Mô hình đã chọn",
-        "models_hint": "Mỗi dòng một mô hình. Nhập ID mô hình thượng nguồn sau khi ánh xạ bí danh và chọn từ nhóm mô hình.",
+        "models_hint": "Thêm mô hình từ danh sách phía trên hoặc nhập mỗi dòng một mô hình. Dùng ID mô hình thượng nguồn thực tế sau khi chọn bí danh/nhóm mô hình.",
         "empty": "Chưa có quy tắc. Kiểm tra mô hình phản hồi bị tắt.",
         "rule": "Quy tắc kiểm tra {{index}}",
         "add": "Thêm quy tắc kiểm tra",
-        "remove": "Xóa quy tắc kiểm tra {{index}}"
+        "remove": "Xóa quy tắc kiểm tra {{index}}",
+        "provider_placeholder": "Chọn hoặc tìm nhà cung cấp",
+        "label_placeholder": "Tìm label nhà cung cấp",
+        "all_labels": "Tất cả label nhà cung cấp",
+        "select_model": "Chọn mô hình để thêm",
+        "model_placeholder": "Chọn hoặc tìm mô hình thượng nguồn",
+        "no_models": "Không có mô hình để thêm. Nhập ID mô hình thượng nguồn bên dưới.",
+        "no_options": "Không có tùy chọn phù hợp"
       },
       "search": {
         "placeholder": "Tìm cài đặt (nhãn hoặc key YAML)",
@@ -2510,7 +2517,11 @@
     "ttft_ms": "ms",
     "page_jump": "Page",
     "filter_search": "Type to filter",
-    "filter_no_match": "No matches"
+    "filter_no_match": "No matches",
+    "response_model_mismatch": "Mô hình không khớp",
+    "response_model_blocked": "Đã chặn",
+    "response_model_mismatch_detail": "Mô hình phản hồi {{responseModel}} không khớp với mô hình thượng nguồn đã chọn {{model}}.",
+    "response_model_blocked_detail": "Kiểm tra mô hình phản hồi đã chặn phản hồi này (HTTP 502). Mô hình đã chọn: {{model}}; mô hình phản hồi: {{responseModel}}."
   },
   "unavailable": {
     "title": "Unavailable / Cooldown",

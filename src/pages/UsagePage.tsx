@@ -12,6 +12,7 @@ import {
   IconX,
 } from '@/components/ui/icons';
 import { Select, type SelectOption } from '@/components/ui/Select';
+import { formatTTFT, responseModelNotice } from '@/features/usage/eventPresentation';
 import type {
   MetricsResponse,
   UsageEventsResponse,
@@ -448,10 +449,64 @@ function buildStringOptions(values: string[], allLabel: string): SelectOption[] 
   ];
 }
 
-function formatTTFT(ms: number | undefined): string {
-  if (!ms || ms <= 0) return '-';
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(2)}s`;
+function ResponseModelCell({ event }: { event: UsageEvent }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const notice = responseModelNotice(event);
+  const label = notice ? t(`usage.response_model_${notice}`) : '';
+  const detail = notice
+    ? t(`usage.response_model_${notice}_detail`, {
+        model: event.model || '-',
+        responseModel: event.response_model || '-',
+      })
+    : '';
+
+  return (
+    <td className={styles.cellResponseModel}>
+      <span className={styles.responseModelName} title={event.response_model}>
+        {event.response_model || '-'}
+      </span>
+      {notice ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          className={`${styles.responseModelNotice} ${
+            notice === 'blocked' ? styles.responseModelBlocked : styles.responseModelMismatch
+          }`}
+          title={detail}
+          aria-label={`${label}: ${detail}`}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <IconAlertTriangle size={12} aria-hidden="true" />
+          {label}
+        </button>
+      ) : null}
+      {open && notice ? (
+        <PortalPopover
+          triggerRef={triggerRef}
+          onClose={() => setOpen(false)}
+          className={styles.errorPopover}
+        >
+          <div className={styles.errorPopoverHead}>
+            <span>{label}</span>
+            <button
+              type="button"
+              className={styles.tokenPopoverClose}
+              aria-label={t('common.close')}
+              onClick={() => setOpen(false)}
+            >
+              <IconX size={12} aria-hidden="true" />
+            </button>
+          </div>
+          <div className={styles.errorPopoverBody}>
+            <div className={styles.errorPopoverRowFull}>{detail}</div>
+          </div>
+        </PortalPopover>
+      ) : null}
+    </td>
+  );
 }
 
 /* ─────────── Event Row ─────────── */
@@ -485,7 +540,7 @@ function EventRow({
       </td>
       <td className={styles.cellModel}>{event.model}</td>
       <td className={styles.cellModel}>{event.client_model || '-'}</td>
-      <td className={styles.cellModel}>{event.response_model || '-'}</td>
+      <ResponseModelCell event={event} />
       <td className={styles.cellAuth}>{event.auth_category || event.auth_type || '-'}</td>
       <td className={styles.cellStream}>
         <span className={event.stream ? styles.badgeStream : styles.badgeSync}>
